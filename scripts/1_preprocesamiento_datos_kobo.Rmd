@@ -5,7 +5,7 @@ output:
     df_print: paged
 ---
 
-```{r}
+```{r, message=FALSE}
 library(dplyr)
 library(tidyr)
 ```
@@ -221,7 +221,7 @@ First make a summary of tree health from the sampling form:
 plots_health <- group_by(muestreo, plot) %>%
                          summarise(tree_health_simplified) %>%
   
-# Pivot wider wide 
+# Pivot wider 
                 pivot_wider(names_from = tree_health_simplified,
                             values_from = tree_health_simplified,
                             values_fn = length) %>%
@@ -245,21 +245,17 @@ parcelas<-inner_join(parcelas, plots_health, by = "plot")
 Remove unused columns
 
 ```{r}
-# from muestreo
-muestreo<- select(muestreo, 
-                  )
-
 # from parcelas
 parcelas<- select(parcelas, 
-                  -dominant_spp.Pinus_ayacauite:dominant_spp_others,
+                  -c(dominant_spp.Pinus_ayacauite:dominant_spp_others),
                   -X_submission_time)
 ```
 
 
 Save data
 ```{r}
-write(muestreo, file="../data/kobo/muestreo_dic2020_tidy.txt", sep = "\t")
-write(parcelas, file="../data/kobo/parcelas_dic2020_tidy.txt", sep = "\t")
+write.table(muestreo, file="../data/kobo/muestreo_dic2020_tidy.txt", sep ="\t")
+write.table(parcelas, file="../data/kobo/parcelas_dic2020_tidy.txt", sep ="\t")
 ```
 
 
