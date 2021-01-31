@@ -1,6 +1,8 @@
 ---
 title: "Preprocesamiento de datos kobo"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r}
@@ -10,13 +12,20 @@ library(tidyr)
 
 Data exported from kobo need to be processed to a tidy format that R can manipulate more easily. 
 
-Load data:
+## Trees sampling
+
+Trees sampling was done by the 12 brigadistas in 48 plots of 10 x 10 m, using a kobo form.
+
+### Load data and check for basic errors
 
 ```{r}
 # load data
-muestreo<-read.delim("../data/kobo/muestreo_dic2020.txt", header = TRUE) %>%
+muestreo<-read.delim("../data/kobo/muestreo_dic2020_raw.txt", header = TRUE) %>%
 # filter rows w/o actual data
-  dplyr::filter(., !is.na(plot))
+  dplyr::filter(., !is.na(plot)) %>%
+
+# remove unnecesary columns
+  select(., -coordinates, -X__version__, -X_version_, -X_id, -X_uuid, -(X_index:X.6))
 head(muestreo)
 ```
 
@@ -26,7 +35,32 @@ Create sample ID concateneting brigadista id + tree number (which were separate 
 muestreo$tree_id<-paste0(muestreo$person_key, muestreo$tree_number)
 ```
 
+Check how many trees were sampled:
 
+```{r}
+# total
+nrow(muestreo)
+
+# dead / alive
+table(muestreo$life_condition)
+
+# by brigadista
+table(muestreo$person_key)
+
+# by plot
+table(muestreo$plot)
+```
+
+We only sampled 48 plots, any larger number must be a typo during sampling. Check, and if there is an error, ommit those samples:
+
+```{r}
+# check
+filter(muestreo, plot > 48) %>% select(plot, person_key, life_condition, tree_id)
+
+# filter from data
+muestreo <- filter(muestreo, !plot >48)
+```
+### Examine and clean tree health data
 
 The variables `tree_health.*` are the result of a multiple choice question according to the tree health state. A single tree can have more than one type of damage.
 
@@ -97,7 +131,6 @@ muestreo$tree_health <- paste5(muestreo$tree_health.healthy,
                         muestreo$tree_health.acid_rain,
                         muestreo$tree_health.other,
                         na.rm=TRUE)
-
 # check
 head(muestreo$tree_health)
 ```
@@ -108,7 +141,7 @@ Check combinations of damage:
 unique(muestreo$tree_health)
 ```
 
-We can't have "healthy" + a damage condition. If this appears this is an error made during sampling. When this happens we have to check the photos of this entries to correct accordingly. All values of "healthy + a damage" will be ommited from the data.
+We can't have "healthy + a damage condition". If this appears this is an error made during sampling. If this happens we have to check the photos of this entries to correct accordingly. All values of "healthy + a damage" will be ommited from the data.
 
 
 ```{r}
@@ -117,5 +150,117 @@ muestreo[grep("healthy ", muestreo$tree_health), c("plot", "tree_id")]
 
 # remove any tree labeled with healthy + something else
 muestreo<-muestreo[grep("healthy ", muestreo$tree_health, invert=TRUE), ]
+
+# check
+unique(muestreo$tree_health)
 ```
+
+Make a new variable to collapse the interaction of ozone + others in a single variable. This would be useful for visualization purposes:
+
+```{r}
+# collapse together interactions of ozone + others
+muestreo <- muestreo %>%
+            mutate(., tree_health_simplified = ifelse(grepl("ozone ", tree_health), "ozone_and_other", tree_health)) %>% 
+
+# collapse together other types of damage
+            mutate(., tree_health_simplified = ifelse(grepl(" ", tree_health_simplified), "others_combined", tree_health_simplified))
+
+#check
+head(muestreo$tree_health_simplified)
+table(muestreo$tree_health_simplified)
+```
+
+Samples with `NA` in `tree_health_simplified` are actually dead trees:
+
+```{r}
+filter(muestreo, is.na(tree_health_simplified)) %>% select(life_condition)
+```
+
+Change "NA" to "dead" in tree_health_simplified`:
+
+```{r}
+muestreo<- mutate(muestreo, 
+                  tree_health_simplified=  replace_na(tree_health_simplified, "dead"))
+table(muestreo$tree_health_simplified)
+```
+
+Columns with presence/absence health condition data are no longer needed, remove them
+```{r}
+muestreo<- select(muestreo, 
+                  -c(tree_health.healthy:tree_health.other))
+```
+
+#### Clean percentage of ozone damage by tree
+
+To be done
+
+## Sampling plots
+
+Plots metadata was surveyed by Alicia Mastretta using another kobo form.
+
+#### Load data and check
+
+```{r}
+parcelas<-read.delim("../data/kobo/parcelas_dic2020_raw.txt", header=TRUE) %>%
+
+# remove unnecesary columns
+  select(., -coordinates, -X__version__, -X_version_, -X_id, -X_uuid, -X_index)
+parcelas
+```
+
+#### Clean reforestation notes and dominant spp
+
+To be done.
+
+#### Add summary of tree health by plot
+
+First make a summary of tree health from the sampling form:
+
+```{r}
+#Make summary 
+plots_health <- group_by(muestreo, plot) %>%
+                         summarise(tree_health_simplified) %>%
+  
+# Pivot wider wide 
+                pivot_wider(names_from = tree_health_simplified,
+                            values_from = tree_health_simplified,
+                            values_fn = length) %>%
+                  
+# replace na with 0 
+                replace(is.na(.), 0)
+
+plots_health
+```
+
+Then add this summary to the parcelas form:
+
+```{r}
+# join tables
+parcelas<-inner_join(parcelas, plots_health, by = "plot")
+```
+
+
+## Save tidy data
+
+Remove unused columns
+
+```{r}
+# from muestreo
+muestreo<- select(muestreo, 
+                  )
+
+# from parcelas
+parcelas<- select(parcelas, 
+                  -dominant_spp.Pinus_ayacauite:dominant_spp_others,
+                  -X_submission_time)
+```
+
+
+Save data
+```{r}
+write(muestreo, file="../data/kobo/muestreo_dic2020_tidy.txt", sep = "\t")
+write(parcelas, file="../data/kobo/parcelas_dic2020_tidy.txt", sep = "\t")
+```
+
+
 
