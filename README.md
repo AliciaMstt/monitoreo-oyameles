@@ -17,7 +17,7 @@ Datos crudos:
 
 * **parcelas_dic2020_raw.txt** Datos crudos resultado de exportar los datos del formulairo de kobo CX\_Parcelas\_censo\_oyameles. Este formulario se ocupó para levantar información general de las 48 parcelas muestreadas en diciembre y enero 2021. La información fue levantada por Alicia Mastretta.
 
-Una vez que los datos son limpiados y organizados por el script [scripts\1_preprocesamiento_datos_kobo.Rmd](1_preprocesamiento_datos_kobo.Rmd) se producen los siguientes archivos:
+Una vez que los datos son limpiados y organizados por el script [1_preprocesamiento_datos_kobo.Rmd](scripts\1_preprocesamiento_datos_kobo.Rmd) se producen los siguientes archivos:
 
 * **muestreo_dic2020_tidy.txt**
 * **parcelas_dic2020_tidy.txt**: además de los datos originales, incluye la suma de árboles bajo cada categoría de salud (sano, daño por ozno, entre otros).
