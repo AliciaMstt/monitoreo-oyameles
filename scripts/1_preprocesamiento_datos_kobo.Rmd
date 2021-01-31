@@ -1,0 +1,121 @@
+---
+title: "Preprocesamiento de datos kobo"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+Data exported from kobo need to be processed to a tidy format that R can manipulate more easily. 
+
+Load data:
+
+```{r}
+# load data
+muestreo<-read.delim("../data/kobo/muestreo_dic2020.txt", header = TRUE) %>%
+# filter rows w/o actual data
+  dplyr::filter(., !is.na(plot))
+head(muestreo)
+```
+
+Create sample ID concateneting brigadista id + tree number (which were separate questions in kobo):
+
+```{r}
+muestreo$tree_id<-paste0(muestreo$person_key, muestreo$tree_number)
+```
+
+
+
+The variables `tree_health.*` are the result of a multiple choice question according to the tree health state. A single tree can have more than one type of damage.
+
+```{r}
+head(select(muestreo, tree_health.healthy:tree_health.other))
+```
+
+Change 0 - 1 notation for condition name:
+
+```{r}
+# 1 for healthy 
+muestreo$tree_health.healthy= gsub("1", "healthy", as.character(muestreo$tree_health.healthy))
+muestreo$tree_health.ozone= gsub("1", "ozone", as.character(muestreo$tree_health.ozone))
+muestreo$tree_health.fungi= gsub("1", "fungi", as.character(muestreo$tree_health.fungi))
+muestreo$tree_health.drougth= gsub("1", "drougth", as.character(muestreo$tree_health.drougth))
+muestreo$tree_health.worm= gsub("1", "worm", as.character(muestreo$tree_health.worm))
+muestreo$tree_health.insect= gsub("1", "insect", as.character(muestreo$tree_health.insect))
+muestreo$tree_health.acid_rain= gsub("1", "acid_rain", as.character(muestreo$tree_health.acid_rain))
+muestreo$tree_health.other= gsub("1", "other", as.character(muestreo$tree_health.other))
+
+# 0 for NA
+muestreo$tree_health.healthy= gsub("0", NA, as.character(muestreo$tree_health.healthy))
+muestreo$tree_health.ozone= gsub("0", NA, as.character(muestreo$tree_health.ozone))
+muestreo$tree_health.fungi= gsub("0", NA, as.character(muestreo$tree_health.fungi))
+muestreo$tree_health.drougth= gsub("0", NA, as.character(muestreo$tree_health.drougth))
+muestreo$tree_health.worm= gsub("0", NA, as.character(muestreo$tree_health.worm))
+muestreo$tree_health.insect= gsub("0", NA, as.character(muestreo$tree_health.insect))
+muestreo$tree_health.acid_rain= gsub("0", NA, as.character(muestreo$tree_health.acid_rain))
+muestreo$tree_health.other= gsub("0", NA, as.character(muestreo$tree_health.other))
+
+# check
+head(select(muestreo, tree_health.healthy:tree_health.other))
+```
+
+The original `tree_health` variable concatenates kobo answers, but it changes depending in the order the options were selected, so lets create a new variable concatenanting from the binary `tree_heath.*` variables
+
+```{r}
+# use useful fuction found in https://stackoverflow.com/questions/13673894/suppress-nas-in-paste
+paste5 <- function(..., sep = " ", collapse = NULL, na.rm = F) {
+  if (na.rm == F)
+    paste(..., sep = sep, collapse = collapse)
+  else
+    if (na.rm == T) {
+      paste.na <- function(x, sep) {
+        x <- gsub("^\\s+|\\s+$", "", x)
+        ret <- paste(na.omit(x), collapse = sep)
+        is.na(ret) <- ret == ""
+        return(ret)
+      }
+      df <- data.frame(..., stringsAsFactors = F)
+      ret <- apply(df, 1, FUN = function(x) paste.na(x, sep))
+
+      if (is.null(collapse))
+        ret
+      else {
+        paste.na(ret, sep = collapse)
+      }
+    }
+}
+
+# paste to concatenate in new variable
+muestreo$tree_health <- paste5(muestreo$tree_health.healthy, 
+                        muestreo$tree_health.ozone, 
+                        muestreo$tree_health.fungi,
+                        muestreo$tree_health.drougth,
+                        muestreo$tree_health.worm,
+                        muestreo$tree_health.insect,
+                        muestreo$tree_health.acid_rain,
+                        muestreo$tree_health.other,
+                        na.rm=TRUE)
+
+# check
+head(muestreo$tree_health)
+```
+
+Check combinations of damage:
+
+```{r}
+unique(muestreo$tree_health)
+```
+
+We can't have "healthy" + a damage condition. If this appears this is an error made during sampling. When this happens we have to check the photos of this entries to correct accordingly. All values of "healthy + a damage" will be ommited from the data.
+
+
+```{r}
+# check if there are any trees with healthy + other. If this is the case, there should be an " " after healthy
+muestreo[grep("healthy ", muestreo$tree_health), c("plot", "tree_id")]
+
+# remove any tree labeled with healthy + something else
+muestreo<-muestreo[grep("healthy ", muestreo$tree_health, invert=TRUE), ]
+```
+
