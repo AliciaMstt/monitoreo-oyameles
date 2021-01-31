@@ -1,6 +1,6 @@
 ## Ignore ghost and R unnecesary files
 .DS_Store
-.nb.html
-.Rhistory
-.Rdata
+*.nb.html
+*.Rhistory
+*.Rdata
 
