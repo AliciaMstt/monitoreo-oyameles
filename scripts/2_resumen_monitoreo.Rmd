@@ -1,0 +1,96 @@
+---
+title: "Resultados del monitoreo participativo de ozono Diciembre 2020 - Enero 2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac.
+
+Los datos corresponden al resultado del muestreo participativo realizado con kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
+
+```{r, message=FALSE, echo=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
+
+```{r, message=FALSE, echo=FALSE}
+# load data
+muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
+parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
+
+# pivot long parcelas data to have health data as a single variable
+parcelas_tidy<-pivot_longer(parcelas_tidy, 
+                            cols = healthy:worm, 
+                            names_to = "tree_health_simplified",
+                            values_to = "n_trees")
+```
+
+### Distribución del estado de salud de los árboles por parcela
+
+La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
+
+```{r, message=FALSE, echo=FALSE}
+# Make a nice color pallete and legend order for all plots
+
+my_cols=c("darkgreen", 
+              "darkred", 
+              "orangered1", 
+              "cadetblue", 
+              "tan", 
+              "beige", 
+              "burlywood4", 
+              "coral", 
+              "aquamarine3", 
+              "gray70", 
+              "black")
+
+desired_order=c("healthy", 
+                "ozone", 
+                "ozone_and_other", 
+                "others_combined", 
+                "drougth", 
+                "fungi", 
+                "insect", 
+                "worm", 
+                "acid_rain", 
+                "other", 
+                "dead")
+  
+ spanish_labels=c("Sano", 
+                  "Ozono", 
+                  "Ozono y otros", 
+                  "Otros combinados no-ozono", 
+                  "Sequía", 
+                  "Hongos", 
+                  "Insectos", 
+                  "Gusano de seda", 
+                  "Lluvia acida", 
+                  "Otro", 
+                  "Muerto")
+
+```
+
+
+
+```{r, message=FALSE, echo=FALSE, fig.height=10, fig.width=15}
+p <- ggplot(parcelas_tidy, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud") 
+  
+
+p + theme_bw() +
+  ggtitle("Estado de salud de los árboles por parcela") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  labs(x="Parcelas", y= "número de árboles") +
+  theme(text = element_text(size = 25)) 
+
+```
+
+
+
