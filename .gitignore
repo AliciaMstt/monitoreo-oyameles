@@ -6,3 +6,7 @@
 
 # Ignore satellite images
 DesLeo_GE_121217_39_2*
+
+# Ignore api key
+api_key.api
+
