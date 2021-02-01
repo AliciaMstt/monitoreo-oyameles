@@ -4,3 +4,5 @@
 *.Rhistory
 *.Rdata
 
+# Ignore satellite images
+DesLeo_GE_121217_39_2*
