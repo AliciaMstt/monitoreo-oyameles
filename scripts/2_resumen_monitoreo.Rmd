@@ -13,6 +13,8 @@ Los datos corresponden al resultado del muestreo participativo realizado con kob
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(ggmap)
+library(scatterpie)
 ```
 
 Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
@@ -23,7 +25,7 @@ muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRU
 parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
 
 # pivot long parcelas data to have health data as a single variable
-parcelas_tidy<-pivot_longer(parcelas_tidy, 
+parcelas_long<-pivot_longer(parcelas_tidy, 
                             cols = healthy:worm, 
                             names_to = "tree_health_simplified",
                             values_to = "n_trees")
@@ -77,7 +79,7 @@ desired_order=c("healthy",
 
 
 ```{r, message=FALSE, echo=FALSE, fig.height=10, fig.width=15}
-p <- ggplot(parcelas_tidy, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
+p <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values= my_cols, breaks = desired_order,
                     labels= spanish_labels,
@@ -92,5 +94,43 @@ p + theme_bw() +
 
 ```
 
+Esta es la distribución de las 48 parcelas:
 
+```{r, message=FALSE, fig.height=15, fig.width=15}
 
+# code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
+
+## configure google api
+
+# You first need to register your api key in https://cloud.google.com/maps-platform/#get-started and follow instructions. The geocoding API is a free service, but you nevertheless need to associate a credit card with the account. Please note that the Google Maps API is not a free service. There is a free allowance of 40,000 calls to the geocoding API per month, and beyond that calls are $0.005 each.
+# after you obtain your api, save it in /scripts/api_key.api (not shown in this repo por obvious reasons).
+
+# if you get the following error when running get_map():
+
+#"Error in aperm.default(map, c(2, 1, 3)) : 
+#  invalid first argument, must be an array " 
+
+# check this troubleshooting: https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
+
+##  load and register api
+api <- readLines("api_key.api")
+register_google(key = api)
+
+## plot map
+# get map
+sat_map = get_map(location = c(lon = -99.3060, lat = 19.2909), zoom = 14, maptype = 'satellite', source = "google")
+
+# plot sampled plots
+p_satmap <-  ggmap(sat_map)
+p_satmap + geom_point(data=parcelas_tidy,
+                      aes(x=X_coordinates_longitude,
+                          y=X_coordinates_latitude),
+                      color="red") +
+          geom_text(data=parcelas_tidy,
+                      aes(x=X_coordinates_longitude,
+                          y=X_coordinates_latitude,
+                          label=plot),
+                      color="white",
+                      check_overlap = TRUE,
+                      hjust = 0, vjust=1, nudge_x = 0.0005)
+```
