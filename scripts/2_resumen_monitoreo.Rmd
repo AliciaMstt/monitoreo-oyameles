@@ -31,7 +31,7 @@ parcelas_long<-pivot_longer(parcelas_tidy,
                             values_to = "n_trees")
 ```
 
-### Distribución del estado de salud de los árboles por parcela
+## Distribución del estado de salud de los árboles por parcela
 
 La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
 
@@ -157,4 +157,52 @@ geom_scatterpie(data=parcelas_tidy,
   theme(text = element_text(size = 30)) 
   
 ```
+
+Podemos analizar el daño por ozono en términos de porcentaje de árboles dañados por parcela. 
+
+Según la altitud:
+
+```{r, message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
+
+# Create new variable with porcentage of ozonoe damage
+parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
+                     mutate(., 
+                      total=sum(healthy,ozone,ozone_and_other,
+                          drougth, acid_rain, other,
+                          others_combined, dead, fungi,
+                          insect, worm)) %>%
+                    mutate(perc.ozone= sum(ozone, ozone_and_other)/total)
+
+#plot
+p <- ggplot(parcelas_tidy) +
+     geom_point(aes(x=X_coordinates_altitude,
+             y=perc.ozone))
+
+p + theme_bw() +
+  ggtitle("Daño por ozono según altitud") + 
+  labs(x="Altitud de la parcela", 
+       y= "Porcentaje de árboles con daño por ozono")+
+       theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  theme(text = element_text(size = 16)) 
+
+
+```
+
+O según la latitud. Esto es relevante porque latitudes más al sur están más lejos de la CDMX y por ende de la fuente de contaminantes:
+
+```{r, message=FALSE, echo= FALSE, fig.height=5, fig.width=9}
+p <- ggplot(parcelas_tidy) +
+     geom_point(aes(x=X_coordinates_latitude,
+             y=perc.ozone))
+
+p + theme_bw() +
+  ggtitle("Daño por ozono según altitud") + 
+  labs(x="Latitud de la parcela", 
+       y= "Porcentaje de árboles con daño por ozono")+
+       theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  theme(text = element_text(size = 16)) 
+```
+
+
+## Distribución del estado de salud de árboles individuales
 
