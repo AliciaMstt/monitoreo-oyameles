@@ -290,3 +290,90 @@ p + theme_bw() +
   labs(x="", y= "Porcentaje de árboles") +
   theme(text = element_text(size = 20)) 
 ```
+
+Examinemos el daño según el tamaño de los árboles, lo cual es un reflejo de su edad aproximada:
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+p <- ggplot(muestreo_tidy) +
+ scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +
+theme_bw()
+p + geom_histogram(aes(x=tree_heigth, 
+                      fill=tree_health_simplified))  +
+    labs(x="Altura del árbol (m)", y= "Número de árboles") +
+    theme(text = element_text(size = 20)) +
+    ggtitle("Estado de salud de los árboles según su altura") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold"))
+
+
+```
+
+Explorar con mayor detalle los árboles menores a 15 metros:
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+p <- filter(muestreo_tidy, tree_heigth<15) %>% 
+     ggplot(.) +
+     scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +
+theme_bw()
+p + geom_histogram(aes(x=tree_heigth, 
+                      fill=tree_health_simplified))  +
+    labs(x="Altura del árbol (m)", y= "Número de árboles") +
+    theme(text = element_text(size = 20)) +
+    ggtitle("Estado de salud de los árboles según su altura") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold"))
+  
+```
+
+Podemos ver lo mismo, pero con el número de nodos:
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+pnodos <- p + geom_histogram(aes(x=tree_nodes, 
+                      fill=tree_health_simplified))  +
+    labs(x="Número de nodos", y= "Número de árboles") +
+    theme(text = element_text(size = 20)) +
+    ggtitle("Estado de salud de los árboles según su número de nodos") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold"))
+pnodos
+  
+```
+
+Y si fueron reforestadas o no:
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=13}
+pnodos + facet_grid(. ~ reforested,
+    labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural")))
+```
+
+También lo podemos explorar por categorías diamétricas:
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+# changer order of levels of tree_diameter_category
+muestreo_tidy$tree_diameter_category<- factor(muestreo_tidy$tree_diameter_category,
+levels=c("", "0.5_cm", "1_cm",   "2_cm", "6_cm", "10_cm", "30_cm" , "40_cm")) 
+
+levels(muestreo_tidy$tree_diameter_category)<-c(NA, "0.5_cm", "1_cm",   "2_cm", "6_cm", "10_cm", "30_cm" , "40_cm")
+
+# subset data and plot
+filter(muestreo_tidy, tree_heigth<15) %>% 
+     ggplot(.) +
+     geom_bar(aes(x=tree_diameter_category, 
+                      fill=tree_health_simplified),
+                      stat="count")  +
+    labs(x="Categoría diamétrica", y= "Número de árboles") +
+    theme(text = element_text(size = 15)) +
+    ggtitle("Estado de salud de los árboles según su diámetro") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold")) + 
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +
+    facet_grid(. ~ reforested,
+    labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+    theme(axis.text.x = element_text(angle=90))
+
+  
+```
