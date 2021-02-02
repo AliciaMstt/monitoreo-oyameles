@@ -140,7 +140,8 @@ p_satmap + geom_point(data=parcelas_tidy,
 
 Según nuestro muestreo, el daño por ozono se distribuye de esta forma:
 
-```{r, message=FALSE,echo=FALSE, fig.height=15, fig.width=15}
+```{r, message=FALSE, echo=FALSE, warning=FALSE, fig.height=15, fig.width=15}
+
 # plot pies in map
 p_satmap +
 geom_scatterpie(data=parcelas_tidy,
@@ -154,9 +155,49 @@ geom_scatterpie(data=parcelas_tidy,
   scale_fill_manual(values= my_cols, breaks = desired_order,
                     labels= spanish_labels,
                     name= "Estado de salud") +
-  theme(text = element_text(size = 30)) 
+  theme(text = element_text(size = 20))
   
 ```
+
+
+Haciendo un acercamiento a la zona central:
+
+
+```{r, message=FALSE,echo=FALSE, warning=FALSE, fig.height=15, fig.width=15}
+
+# zoom plot
+sat_map = get_map(location = c(lon = -99.303, lat = 19.2890), zoom = 16, maptype = 'satellite', source = "google")
+
+# plot
+p_satmap <-  ggmap(sat_map)
+
+# plot pies in map
+p_satmap +
+geom_scatterpie(data=parcelas_tidy,
+                aes(x=X_coordinates_longitude,
+                    y=X_coordinates_latitude,
+                    group=plot),
+                pie_scale = .7,
+                cols=desired_order,
+                color=NA,
+                alpha=1)  +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud") +
+  theme(text = element_text(size = 30)) +
+  
+  # add plots id
+geom_text(data=parcelas_tidy,
+                      aes(x=X_coordinates_longitude,
+                          y=X_coordinates_latitude,
+                          label=plot),
+                      color="white",
+                     check_overlap = TRUE,
+                      hjust = 0, vjust=1, nudge_x = 0.0005,
+                 size= 5)
+  
+```
+
 
 Podemos analizar el daño por ozono en términos de porcentaje de árboles dañados por parcela. 
 
@@ -202,6 +243,8 @@ p + theme_bw() +
        theme(plot.title = element_text(lineheight=1.1, face="bold")) +
   theme(text = element_text(size = 16)) 
 ```
+
+
 
 
 ## Distribución del estado de salud de árboles individuales
