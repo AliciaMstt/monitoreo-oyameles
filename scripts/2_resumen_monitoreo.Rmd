@@ -237,7 +237,7 @@ p <- ggplot(parcelas_tidy) +
              y=perc.ozone))
 
 p + theme_bw() +
-  ggtitle("Daño por ozono según altitud") + 
+  ggtitle("Daño por ozono según latitud") + 
   labs(x="Latitud de la parcela", 
        y= "Porcentaje de árboles con daño por ozono")+
        theme(plot.title = element_text(lineheight=1.1, face="bold")) +
