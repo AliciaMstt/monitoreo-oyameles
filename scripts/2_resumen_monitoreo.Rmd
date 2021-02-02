@@ -9,7 +9,7 @@ Este reporte explora los resultados del monitoreo participativo del estado de sa
 
 Los datos corresponden al resultado del muestreo participativo realizado con kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
 
-```{r, message=FALSE, echo=FALSE}
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -246,6 +246,47 @@ p + theme_bw() +
 
 
 
-
 ## Distribución del estado de salud de árboles individuales
 
+Examinemos el daño por ozono dependiendo de si la planta fue reforestada o no, y de si se encuentra cubierta o expuesta.
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+p <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
+                      fill=tree_health_simplified)) +
+       geom_bar(stat="count") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +  
+  facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cubierto", "expuesto"))
+p + theme_bw() +
+  ggtitle("Estado de salud de los árboles") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  labs(x="", y= "Número de árboles") +
+  theme(text = element_text(size = 20)) 
+```
+
+
+En términos porcentuales:
+
+```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+p <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
+                      fill=tree_health_simplified)) +
+       geom_bar(stat="count", position = "fill") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +  
+  facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cubierto", "expuesto"))
+p + theme_bw() +
+  ggtitle("Estado de salud de los árboles") + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  labs(x="", y= "Porcentaje de árboles") +
+  theme(text = element_text(size = 20)) 
+```
