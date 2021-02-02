@@ -96,7 +96,7 @@ p + theme_bw() +
 
 Esta es la distribución de las 48 parcelas:
 
-```{r, message=FALSE, fig.height=15, fig.width=15}
+```{r, message=FALSE, echo=FALSE, fig.height=15, fig.width=15}
 
 # code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
 
@@ -131,6 +131,30 @@ p_satmap + geom_point(data=parcelas_tidy,
                           y=X_coordinates_latitude,
                           label=plot),
                       color="white",
-                      check_overlap = TRUE,
-                      hjust = 0, vjust=1, nudge_x = 0.0005)
+                 #    check_overlap = TRUE,
+                      hjust = 0, vjust=1, nudge_x = 0.0005,
+                 size= 5) +
+    theme(text = element_text(size = 30)) 
 ```
+
+
+Según nuestro muestreo, el daño por ozono se distribuye de esta forma:
+
+```{r, message=FALSE,echo=FALSE, fig.height=15, fig.width=15}
+# plot pies in map
+p_satmap +
+geom_scatterpie(data=parcelas_tidy,
+                aes(x=X_coordinates_longitude,
+                    y=X_coordinates_latitude,
+                    group=plot),
+                pie_scale = 1.5,
+                cols=desired_order,
+                color=NA,
+                alpha=1)  +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud") +
+  theme(text = element_text(size = 30)) 
+  
+```
+
