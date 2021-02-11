@@ -222,9 +222,9 @@ plots_health <- group_by(muestreo, plot) %>%
                          summarise(tree_health_simplified) %>%
   
 # Pivot wider 
-                pivot_wider(names_from = tree_health_simplified,
+              pivot_wider(., names_from = tree_health_simplified,
                             values_from = tree_health_simplified,
-                            values_fn = length) %>%
+                            values_fn = list(tree_health_simplified = length)) %>%
                   
 # replace na with 0 
                 replace(is.na(.), 0)
