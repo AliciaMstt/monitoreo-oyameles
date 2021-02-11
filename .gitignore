@@ -10,3 +10,5 @@ DesLeo_GE_121217_39_2*
 # Ignore api key
 api_key.api
 
+# Ignore archive directory
+/archive
