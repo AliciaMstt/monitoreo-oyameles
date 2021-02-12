@@ -192,7 +192,76 @@ muestreo<- select(muestreo,
 
 #### Clean percentage of ozone damage by tree
 
-To be done
+The variables `ozone.damage.percentage*`are the result of a multiple choice question according to the percentage of the tree showing ozone damage (categorical variable). 
+
+See data:
+```{r}
+head(select(muestreo, ozone_damage_percentage:ozone_damage_percentage.70.100))
+```
+
+Change 0 - 1 notation for condition name:
+
+```{r}
+# 0 for NA
+muestreo$ozone_damage_percentage.less_10 = gsub("0", NA, as.character(muestreo$ozone_damage_percentage.less_10))
+muestreo$ozone_damage_percentage.10.40 = gsub("0", NA, as.character(muestreo$ozone_damage_percentage.10.40))
+muestreo$ozone_damage_percentage.50 = gsub("0", NA, as.character(muestreo$ozone_damage_percentage.50))
+muestreo$ozone_damage_percentage.50.70 = gsub("0", NA, as.character(muestreo$ozone_damage_percentage.50.70))
+muestreo$ozone_damage_percentage.70.100 = gsub("0", NA, as.character(muestreo$ozone_damage_percentage.70.100))
+
+#1 for condition
+muestreo$ozone_damage_percentage.less_10 = gsub("1", "less than 10%", as.character(muestreo$ozone_damage_percentage.less_10))
+muestreo$ozone_damage_percentage.10.40 = gsub("1", "10 to 40%", as.character(muestreo$ozone_damage_percentage.10.40))
+muestreo$ozone_damage_percentage.50 = gsub("1", "40 to 50%", as.character(muestreo$ozone_damage_percentage.50))
+muestreo$ozone_damage_percentage.50.70 = gsub("1", "50 to 70%", as.character(muestreo$ozone_damage_percentage.50.70))
+muestreo$ozone_damage_percentage.70.100 = gsub("1", "more than 70%", as.character(muestreo$ozone_damage_percentage.70.100))
+
+# check
+head(select(muestreo, ozone_damage_percentage:ozone_damage_percentage.70.100))
+
+```
+
+The original `ozone_damage_percentage` variable concatenates kobo answers, but it changes depending in the order the options were selected, so lets create a new variable concatenanting from the ozone_damage_percentage.* variables:
+
+```{r}
+# paste to concatenate in new variable
+muestreo$ozone_damage_percentage<-paste5(muestreo$ozone_damage_percentage.less_10, 
+                       muestreo$ozone_damage_percentage.10.40, 
+                       muestreo$ozone_damage_percentage.50,
+                       muestreo$ozone_damage_percentage.50.70,
+                       muestreo$ozone_damage_percentage.70.100,
+                       na.rm=TRUE)
+# check
+head(muestreo$ozone_damage_percentage)
+```
+
+Check combinations of damage:
+
+```{r}
+unique(muestreo$ozone_damage_percentage)
+```
+
+A single tree should have only one category of damage, if this is not the case, it is a mistake that needs to be corrected. Further versions of the kobo form would only allow one option to be selected.
+
+```{r}
+# check if there are any trees with more than one damage category
+muestreo[grep("% ", muestreo$ozone_damage_percentage), c("plot", "tree_id", "ozone_damage_percentage")]
+
+# remove any tree labeled with more than one damage category
+muestreo<-muestreo[grep("% ", muestreo$ozone_damage_percentage, invert=TRUE), ]
+
+# check
+unique(muestreo$tree_health)
+
+```
+
+Columns with presence/absence health condition data are no longer needed, remove them
+
+```{r}
+muestreo<- select(muestreo, 
+                  -c(ozone_damage_percentage.less_10:ozone_damage_percentage.option_6))
+```
+
 
 ## Sampling plots
 
