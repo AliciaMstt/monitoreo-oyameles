@@ -7,9 +7,9 @@ output:
 
 Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac.
 
-Los datos corresponden al resultado del muestreo participativo realizado con kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
+Los datos corresponden al resultado del muestreo participativo realizado por 12 brigadistas de Santa Rosa Xochiac, utilizando kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
 
-```{r, message=FALSE, echo=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -19,7 +19,7 @@ library(scatterpie)
 
 Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
 
-```{r, message=FALSE, echo=FALSE}
+```{r, message=FALSE}
 # load data
 muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
 parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
@@ -35,7 +35,7 @@ parcelas_long<-pivot_longer(parcelas_tidy,
 
 La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
 
-```{r, message=FALSE, echo=FALSE}
+```{r, message=FALSE}
 # Make a nice color pallete and legend order for all plots
 
 my_cols=c("darkgreen", 
@@ -78,7 +78,7 @@ desired_order=c("healthy",
 
 
 
-```{r, message=FALSE, echo=FALSE, fig.height=10, fig.width=15}
+```{r, message=FALSE, fig.height=10, fig.width=15}
 p <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values= my_cols, breaks = desired_order,
@@ -96,7 +96,7 @@ p + theme_bw() +
 
 Esta es la distribución de las 48 parcelas:
 
-```{r, message=FALSE, echo=FALSE, fig.height=15, fig.width=15}
+```{r, message=FALSE, fig.height=15, fig.width=15}
 
 # code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
 
@@ -140,7 +140,7 @@ p_satmap + geom_point(data=parcelas_tidy,
 
 Según nuestro muestreo, el daño por ozono se distribuye de esta forma:
 
-```{r, message=FALSE, echo=FALSE, warning=FALSE, fig.height=15, fig.width=15}
+```{r, message=FALSE, warning=FALSE, fig.height=15, fig.width=15}
 
 # plot pies in map
 p_satmap +
@@ -163,7 +163,7 @@ geom_scatterpie(data=parcelas_tidy,
 Haciendo un acercamiento a la zona central:
 
 
-```{r, message=FALSE,echo=FALSE, warning=FALSE, fig.height=15, fig.width=15}
+```{r, message=FALSE,, warning=FALSE, fig.height=15, fig.width=15}
 
 # zoom plot
 sat_map = get_map(location = c(lon = -99.303, lat = 19.2890), zoom = 16, maptype = 'satellite', source = "google")
@@ -203,7 +203,7 @@ Podemos analizar el daño por ozono en términos de porcentaje de árboles daña
 
 Según la altitud:
 
-```{r, message=FALSE, echo=FALSE, fig.height=5, fig.width=9}
+```{r, message=FALSE, fig.height=5, fig.width=9}
 
 # Create new variable with porcentage of ozonoe damage
 parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
@@ -231,7 +231,7 @@ p + theme_bw() +
 
 O según la latitud. Esto es relevante porque latitudes más al sur están más lejos de la CDMX y por ende de la fuente de contaminantes:
 
-```{r, message=FALSE, echo= FALSE, fig.height=5, fig.width=9}
+```{r, message=FALSE, fig.height=5, fig.width=9}
 p <- ggplot(parcelas_tidy) +
      geom_point(aes(x=X_coordinates_latitude,
              y=perc.ozone))
@@ -250,7 +250,7 @@ p + theme_bw() +
 
 Examinemos el daño por ozono dependiendo de si la planta fue reforestada o no, y de si se encuentra cubierta o expuesta.
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
                       fill=tree_health_simplified)) +
        geom_bar(stat="count") +
@@ -269,10 +269,9 @@ p + theme_bw() +
   theme(text = element_text(size = 20)) 
 ```
 
-
 En términos porcentuales:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
                       fill=tree_health_simplified)) +
        geom_bar(stat="count", position = "fill") +
@@ -293,7 +292,7 @@ p + theme_bw() +
 
 Examinemos el daño según el tamaño de los árboles, lo cual es un reflejo de su edad aproximada:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- ggplot(muestreo_tidy) +
  scale_fill_manual(values= my_cols, breaks = desired_order,
                     labels= spanish_labels,
@@ -314,7 +313,7 @@ p + geom_histogram(aes(x=tree_heigth,
 
 Explorar con mayor detalle los árboles menores a 15 metros:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
      ggplot(.) +
      scale_fill_manual(values= my_cols, breaks = desired_order,
@@ -332,7 +331,7 @@ p + geom_histogram(aes(x=tree_heigth,
 
 Podemos ver lo mismo, pero con el número de nodos:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 pnodos <- p + geom_histogram(aes(x=tree_nodes, 
                       fill=tree_health_simplified))  +
     labs(x="Número de nodos", y= "Número de árboles") +
@@ -345,7 +344,7 @@ pnodos
 
 Y si fueron reforestadas o no:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=13}
+```{r, message=FALSE, fig.height=9, fig.width=13}
 pnodos + facet_grid(. ~ reforested,
     labeller = as_labeller(c("yes" = "reforestado",
                                     "no" = "natural")))
@@ -353,7 +352,7 @@ pnodos + facet_grid(. ~ reforested,
 
 En términos porcentuales:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 pnodos <- p + geom_histogram(aes(x=tree_nodes, 
                       fill=tree_health_simplified),
                       position= "fill", binwidth=1)  +
@@ -374,7 +373,7 @@ pnodos + facet_grid(. ~ reforested,
 
 También lo podemos explorar por categorías diamétricas:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 # changer order of levels of tree_diameter_category
 muestreo_tidy$tree_diameter_category<- factor(muestreo_tidy$tree_diameter_category,
 levels=c("", "0.5_cm", "1_cm",   "2_cm", "6_cm", "10_cm", "30_cm" , "40_cm")) 
@@ -402,7 +401,7 @@ filter(muestreo_tidy, tree_heigth<15, !is.na(tree_diameter_category)) %>%
 
 En términos porcentules:
 
-```{r, message=FALSE, echo= FALSE, fig.height=9, fig.width=11}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 # subset data and plot
 filter(muestreo_tidy, tree_heigth<15, !is.na(tree_diameter_category)) %>% 
      ggplot(.) +
@@ -422,3 +421,78 @@ filter(muestreo_tidy, tree_heigth<15, !is.na(tree_diameter_category)) %>%
     theme(axis.text.x = element_text(angle=90)) + theme_bw()
 ```
 
+Ahora evaluaremos el nivel del daño por ozono, es decir, qué porcentaje del árbol se encuentra dañado, dentro del subset de árboles que están dañados.
+
+```{r, fig.height=9, fig.width=11}
+my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
+desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
+
+p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
+            ggplot() +
+            scale_fill_manual(values= my_cols2, 
+                              breaks = desired_order_percentage,
+                              name= "Porcentaje del árbol \n dañado por ozono") +
+            theme_bw() + theme(text = element_text(size = 20)) 
+
+p_od +
+  geom_bar(aes(x=tree_diameter_category,
+               fill=ozone_damage_percentage)) +
+  labs(x="Categoría diamétrica", y= "Número de árboles") +
+  ggtitle("Porcentaje del árbol dañado en árboles con daño por ozono") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+
+```
+
+Viéndolo por la edad de los árboles (en árboles <15 años):
+
+```{r, fig.height=9, fig.width=13}
+p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage)) +
+  labs(x="Número de nodos", y= "Número de árboles") +
+  ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+
+
+```
+
+En términos porcentuales:
+
+```{r, fig.height=9, fig.width=13}
+p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage),
+           position = "fill") +
+  labs(x="Número de nodos", y= "Porcentaje de árboles") +
+  ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+```
+
+Y dividido por reforestadas y naturales:
+
+```{r, fig.height=9, fig.width=14}
+p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage),
+           position="fill") +
+  labs(x="Número de nodos", y= "Número de árboles") +
+  ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural")))
+
+```
+
+```{r, fig.height=9, fig.width=15}
+p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage),
+           position="fill") +
+  labs(x="Número de nodos", y= "Porcentaje de árboles") +
+  ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  facet_grid(. ~ tree_health_simplified, 
+             labeller = as_labeller(c("ozone" = "Sólo daño por ozono",
+                                    "ozone_and_other" = "Daño por ozono y otro")))
+```
