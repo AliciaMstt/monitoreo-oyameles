@@ -138,7 +138,7 @@ p_satmap + geom_point(data=parcelas_tidy,
 ```
 
 
-Según nuestro muestreo, el daño por ozono se distribuye de esta forma:
+Según nuestro muestreo, el daño por ozono se distribuye espacialmente de esta forma:
 
 ```{r, message=FALSE, warning=FALSE, fig.height=15, fig.width=15}
 
@@ -198,8 +198,9 @@ geom_text(data=parcelas_tidy,
   
 ```
 
+En total se muestrearon `r nrow(muestreo_tidy)` árboles de los cuales `r nrow(filter(muestreo_tidy, life_condition=="alive"))` se encontraban vivos. De estos, el `r round(nrow(filter(muestreo_tidy, tree_health_simplified=="ozone")) / nrow(filter(muestreo_tidy, life_condition=="alive")) * 100, 2)` % presentó daño por ozono, y el `r round(nrow(filter(muestreo_tidy, tree_health_simplified=="ozone_and_other")) / nrow(filter(muestreo_tidy, life_condition=="alive")) * 100, 2)` presentó daño por ozono en combinación con otro tipo de daño, lo que hace al ozono la fuente de daño más abundante de estos bosques. 
 
-Podemos analizar el daño por ozono en términos de porcentaje de árboles dañados por parcela. 
+A continuación analizamos el daño por ozono en términos de porcentaje de árboles dañados por parcela. 
 
 Según la altitud:
 
@@ -244,7 +245,7 @@ p + theme_bw() +
   theme(text = element_text(size = 16)) 
 ```
 
-
+Sin embargo, ni la altitud ni la latitud parecen influir en la distribución del daño por ozono.
 
 ## Distribución del estado de salud de árboles individuales
 
@@ -287,10 +288,11 @@ p + theme_bw() +
   ggtitle("Estado de salud de los árboles") + 
      theme(plot.title = element_text(lineheight=1.1, face="bold")) +
   labs(x="", y= "Porcentaje de árboles") +
-  theme(text = element_text(size = 20)) 
+  theme(text = element_text(size = 20))
+
 ```
 
-Examinemos el daño según el tamaño de los árboles, lo cual es un reflejo de su edad aproximada:
+Examinemos el daño según la altura de los árboles:
 
 ```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- ggplot(muestreo_tidy) +
@@ -298,12 +300,16 @@ p <- ggplot(muestreo_tidy) +
                     labels= spanish_labels,
                     name= "Estado de salud del árbol") +
 theme_bw()
-p + geom_histogram(aes(x=tree_heigth, 
+
+p2<-p + geom_histogram(aes(x=tree_heigth, 
                       fill=tree_health_simplified))  +
     labs(x="Altura del árbol (m)", y= "Número de árboles") +
     theme(text = element_text(size = 20)) +
     ggtitle("Estado de salud de los árboles según su altura") + 
-     theme(plot.title = element_text(lineheight=1.1, face="bold")) + 
+     theme(plot.title = element_text(lineheight=1.1, face="bold")) 
+p2
+
+p2 + 
   facet_grid(. ~ reforested,
     labeller = as_labeller(c("yes" = "reforestado",
                                     "no" = "natural")))
@@ -431,6 +437,8 @@ p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
             ggplot() +
             scale_fill_manual(values= my_cols2, 
                               breaks = desired_order_percentage,
+                              labels = c("menos de 10%", "10 a 40%", "40 a 50%",
+                                         "50 a 70%", "más de 70%"),
                               name= "Porcentaje del árbol \n dañado por ozono") +
             theme_bw() + theme(text = element_text(size = 20)) 
 
