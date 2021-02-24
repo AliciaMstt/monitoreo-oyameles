@@ -12,3 +12,6 @@ api_key.api
 
 # Ignore archive directory
 /archive
+
+# Ignore images taken with kobo, this is only saved in our local servers
+/data/kobo_images/images_dic20en21/
