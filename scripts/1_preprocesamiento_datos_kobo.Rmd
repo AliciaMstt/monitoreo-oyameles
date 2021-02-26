@@ -8,6 +8,7 @@ output:
 ```{r, message=FALSE}
 library(dplyr)
 library(tidyr)
+library(readr)
 ```
 
 Data exported from kobo need to be processed to a tidy format that R can manipulate more easily. 
@@ -263,6 +264,39 @@ muestreo<- select(muestreo,
 ```
 
 
+
+### Examine and clean reforestation notes
+
+If a reforested plant had a tag, we asked brigadistas to write what the tag said, or to add "NP" if it was not present. Somethings the tag is only the year, but it can also include other information, like "SRX" if it was from Santa Rosa Xochiac.
+
+```{r}
+table(muestreo$reforestation_code)
+```
+
+First, we change the one uncertain (eg. "NP al parecer 2014") and no data (which means the plant was not reforested and this questions was not answered by brigadistas) to NA: 
+
+```{r}
+# as charcter
+muestreo$reforestation_code<-as.character(muestreo$reforestation_code)
+
+# change uncertian registry to NP
+muestreo$reforestation_code<- gsub("NP al parecer 2014", "NP", muestreo$reforestation_code)
+muestreo$reforestation_code<- gsub("NP Distribucion simetrica Sin cajete", "NP", muestreo$reforestation_code)
+muestreo$reforestation_code<- gsub("NP. Se nota sin mantenimiento", "NP", muestreo$reforestation_code)
+
+# change "" to NA
+muestreo$reforestation_code[muestreo$reforestation_code==""] <- NA
+
+```
+
+Create a new variable with only the year data:
+
+```{r}
+muestreo<-mutate(muestreo, reforestation_year=parse_number(reforestation_code, na="NP"))
+table(muestreo$reforestation_year)
+```
+
+
 ## Sampling plots
 
 Plots metadata was surveyed by Alicia Mastretta using another kobo form.
@@ -277,7 +311,7 @@ parcelas<-read.delim("../data/kobo/parcelas_dic2020_raw.txt", header=TRUE) %>%
 parcelas
 ```
 
-#### Clean reforestation notes and dominant spp
+#### Clean dominant spp
 
 To be done.
 
@@ -307,6 +341,26 @@ Then add this summary to the parcelas form:
 # join tables
 parcelas<-inner_join(parcelas, plots_health, by = "plot")
 ```
+
+### Examine and clean reforestation notes
+
+The origin of the reforestation was asked at the parcelas level asking the brigadistas that were present during each reforestation, but that were not necesarely sampling trees in that parcel.
+
+```{r}
+levels(parcelas$reforestation_notes)
+```
+
+Create a new variable where only :
+
+```{r}
+parcelas$reforestation_notes[parcelas$reforestation_notes=="2013 santa rosa "]<- "2013 vivero santa rosa"
+```
+
+Create new variable with only origin
+```{r}
+gsub("[^[:digit:]]+", " ", parcelas$reforestation_notes)
+```
+
 
 
 ## Save tidy data
