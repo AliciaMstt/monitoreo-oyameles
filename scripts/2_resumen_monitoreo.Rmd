@@ -31,6 +31,13 @@ parcelas_long<-pivot_longer(parcelas_tidy,
                             values_to = "n_trees")
 ```
 
+Los datos analizados aquí corresponden sólo a los árboles que fueron aprovados durante la validación revisando manualmente las fotografías en kobotoolbox. Del total de `r nrow(muestreo_tidy)` árboles muestreados, `r sum(muestreo_tidy$X_validation_status=="validation_status_approved")` fueron aprovados en la validación.
+
+```{r}
+muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
+```
+
+
 ## Distribución del estado de salud de los árboles por parcela
 
 La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
@@ -44,7 +51,7 @@ my_cols=c("darkgreen",
               "cadetblue", 
               "tan", 
               "beige", 
-              "burlywood4", 
+            #  "burlywood4", 
               "coral", 
               "aquamarine3", 
               "gray70", 
@@ -56,7 +63,7 @@ desired_order=c("healthy",
                 "others_combined", 
                 "drougth", 
                 "fungi", 
-                "insect", 
+             #   "insect", 
                 "worm", 
                 "acid_rain", 
                 "other", 
@@ -68,7 +75,7 @@ desired_order=c("healthy",
                   "Otros combinados no-ozono", 
                   "Sequía", 
                   "Hongos", 
-                  "Insectos", 
+               #   "Insectos", 
                   "Gusano de seda", 
                   "Lluvia acida", 
                   "Otro", 
@@ -212,7 +219,8 @@ parcelas_tidy<-parcelas_tidy %>% rowwise() %>%
                       total=sum(healthy,ozone,ozone_and_other,
                           drougth, acid_rain, other,
                           others_combined, dead, fungi,
-                          insect, worm)) %>%
+                          # insect, 
+                          worm)) %>%
                     mutate(perc.ozone= sum(ozone, ozone_and_other)/total)
 
 #plot
