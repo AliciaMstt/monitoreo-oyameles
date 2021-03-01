@@ -3,6 +3,7 @@ title: "Resultados del monitoreo participativo de ozono Diciembre 2020 - Enero 2
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac.
@@ -85,7 +86,7 @@ desired_order=c("healthy",
 
 
 
-```{r, message=FALSE, fig.height=10, fig.width=15}
+```{r, message=FALSE, fig.height=5, fig.width=7}
 p <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values= my_cols, breaks = desired_order,
@@ -437,7 +438,7 @@ filter(muestreo_tidy, tree_heigth<15, !is.na(tree_diameter_category)) %>%
 
 Ahora evaluaremos el nivel del daño por ozono, es decir, qué porcentaje del árbol se encuentra dañado, dentro del subset de árboles que están dañados.
 
-```{r, fig.height=9, fig.width=11}
+```{r}
 my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
 desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
 
@@ -450,6 +451,24 @@ p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
                               name= "Porcentaje del árbol \n dañado por ozono") +
             theme_bw() + theme(text = element_text(size = 20)) 
 
+```
+
+```{r, fig.height=9, fig.width=11}
+p_od +
+  geom_bar(aes(x=tree_exposition,
+               fill=ozone_damage_percentage),
+           position = "fill") +
+    facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cubierto", "expuesto")) +
+    labs(x="", y= "Porcentaje de árboles") +
+  ggtitle("b)")
+```
+
+
+```{r, fig.height=9, fig.width=11}
 p_od +
   geom_bar(aes(x=tree_diameter_category,
                fill=ozone_damage_percentage)) +
@@ -491,7 +510,21 @@ p_od +
   geom_bar(aes(x=tree_nodes,
                fill=ozone_damage_percentage),
            position="fill") +
-  labs(x="Número de nodos", y= "Número de árboles") +
+  labs(x="Número de nodos", y= "Porcentaje de árboles") +
+  ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural")))
+
+```
+
+
+```{r, fig.height=9, fig.width=14}
+p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage)) +
+  labs(x="Número de nodos", y= "Porcentaje de árboles") +
   ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
   theme(plot.title = element_text(lineheight=1.1, face="bold")) +
   facet_grid(. ~ reforested, 
