@@ -1,0 +1,308 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+Este documento presenta el subjuconjunto de las figuras utilizadas para la propuesta en extenso.
+
+## Datos y paquetes
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggmap)
+library(scatterpie)
+```
+
+Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
+
+```{r, message=FALSE}
+# load data
+muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
+parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
+
+# pivot long parcelas data to have health data as a single variable
+parcelas_long<-pivot_longer(parcelas_tidy, 
+                            cols = healthy:worm, 
+                            names_to = "tree_health_simplified",
+                            values_to = "n_trees")
+```
+
+Los datos analizados aquí corresponden sólo a los árboles que fueron aprovados durante la validación revisando manualmente las fotografías en kobotoolbox. Del total de `r nrow(muestreo_tidy)` árboles muestreados, `r sum(muestreo_tidy$X_validation_status=="validation_status_approved")` fueron aprovados en la validación.
+
+```{r}
+muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
+```
+
+Paletas de colores:
+
+```{r, message=FALSE}
+# Make a nice color pallete and legend order for all plots
+
+my_cols=c("darkgreen", 
+              "darkred", 
+              "orangered1", 
+              "cadetblue", 
+              "tan", 
+              "beige", 
+            #  "burlywood4", 
+              "coral", 
+              "aquamarine3", 
+              "gray70", 
+              "black")
+
+desired_order=c("healthy", 
+                "ozone", 
+                "ozone_and_other", 
+                "others_combined", 
+                "drougth", 
+                "fungi", 
+             #   "insect", 
+                "worm", 
+                "acid_rain", 
+                "other", 
+                "dead")
+  
+ spanish_labels=c("Sano", 
+                  "Ozono", 
+                  "Ozono y otros", 
+                  "Otros combinados no-ozono", 
+                  "Sequía", 
+                  "Hongos", 
+               #   "Insectos", 
+                  "Gusano de seda", 
+                  "Lluvia acida", 
+                  "Otro", 
+                  "Muerto")
+
+# For ozone damage percentage 
+ my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
+ 
+desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
+
+
+```
+
+Multiplot fun:
+
+```{r}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+# Figuras del monitoreo para la propuesta en extenso:
+
+### Figura 4:
+
+Mapa satelital con pies:
+
+```{r, message=FALSE, fig.height=7, fig.width=7}
+
+# code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-g0ogle-map.html
+
+## configure google api
+
+# You first need to register your api key in https://cloud.google.com/maps-platform/#get-started and follow instructions. The geocoding API is a free service, but you nevertheless need to associate a credit card with the account. Please note that the Google Maps API is not a free service. There is a free allowance of 40,000 calls to the geocoding API per month, and beyond that calls are $0.005 each.
+# after you obtain your api, save it in /scripts/api_key.api (not shown in this repo por obvious reasons).
+
+# if you get the following error when running get_map():
+
+#"Error in aperm.default(map, c(2, 1, 3)) : 
+#  invalid first argument, must be an array " 
+
+# check this troubleshooting: https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
+
+##  load and register api
+api <- readLines("api_key.api")
+register_google(key = api)
+
+## plot map
+# get map
+sat_map = get_map(location = c(lon = -99.3060, lat = 19.2909), zoom = 14, maptype = 'satellite', source = "google")
+
+# plot sampled plots
+p_satmap <-  ggmap(sat_map) +
+geom_scatterpie(data=parcelas_tidy,
+                aes(x=X_coordinates_longitude,
+                    y=X_coordinates_latitude,
+                    group=plot),
+                pie_scale = 2,
+                cols=desired_order,
+                color=NA,
+                alpha=1)  +
+  ggtitle("a)") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud") +
+  theme(text = element_text(size = 20), legend.position="none")
+```
+
+Bar plot parcelas:
+
+```{r, message=FALSE, fig.height=7, fig.width=10}
+p <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud") 
+  
+p_barsparcela<- p + theme_bw() +
+  ggtitle("b)") + 
+  labs(x="Parcelas", y= "número de árboles") +
+  theme(text = element_text(size = 22)) 
+
+```
+
+
+Plot Figura 1:
+
+```{r, message=FALSE, fig.height=7, fig.width=20}
+multiplot(p_satmap, p_barsparcela, cols=2)
+```
+**Figura 4. Estado de salud de árboles de oyamel en el PNDL y Santa Rosa Xochiac**. a) Distribución espacial de 48 parcelas de monitoreo y del estado de salud de las plantas dentro de cada una. b) Número de árboles censados por parcela y distribución del estado de salud de los árboles en cada una. Datos del muestreo participativo realizado como parte de este proyecto
+
+## Figura 5
+
+Panel a: 
+```{r, fig.height=7, fig.width=10}
+p <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
+                      fill=tree_health_simplified)) +
+       geom_bar(stat="count", position = "fill") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +  
+  facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cubierto", "expuesto"))
+p_a <- p + theme_bw() +
+  ggtitle("a)") +
+  labs(x="", y= "Porcentaje de árboles") +
+  theme(text = element_text(size = 22))
+```
+
+Panel b)
+```{r, fig.height=7, fig.width=10}
+p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
+            ggplot() +
+            scale_fill_manual(values= my_cols2, 
+                              breaks = desired_order_percentage,
+                              labels = c("menos de 10%", "10 a 40%", "40 a 50%",
+                                         "50 a 70%", "más de 70%"),
+                              name= "Porcentaje del árbol \n dañado por ozono") +
+            theme_bw() + theme(text = element_text(size = 22)) 
+# plot
+p_b <- p_od +
+  geom_bar(aes(x=tree_exposition,
+               fill=ozone_damage_percentage),
+           position = "fill") +
+    facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cubierto", "expuesto")) +
+    labs(x="", y= "Porcentaje de árboles") +
+  ggtitle("b)")
+```
+
+Multiplot:
+```{r, fig.height=7, fig.width=20}
+multiplot(p_a, p_b, cols=2)
+```
+**Figura 5. Diferencias en el estado de salud entre oyameles de regeneración natural (n= `r sum(muestreo_tidy$reforested=="no")`) y reforestados (n= `r sum(muestreo_tidy$reforested=="yes")`) acorde a la exposición de la planta.** a) Estado de salud del árbol según los tipos de daño evaluados. b) Porcentaje del árbol dañado por ozono. Una planta se consideró expuesta si no estaba a la sombra inmediata de otro árbol u arbusto.
+
+
+## Figura 6.
+
+Panel a):
+```{r, fig.height=7, fig.width=7}
+p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
+     ggplot(.) +
+theme_bw()
+
+p_a <- p + geom_histogram(aes(x=tree_nodes))  +
+    labs(x="Número de nodos", y= "Número de árboles") +
+    theme(text = element_text(size = 22), legend.position = "n") +
+    ggtitle("a)")
+```
+
+Panel b):
+```{r, fig.height=7, fig.width=10}
+p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
+     ggplot(.) +
+     scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +
+theme_bw()
+p_b <- p + geom_histogram(aes(x=tree_nodes, 
+                      fill=tree_health_simplified),
+                      position= "fill", binwidth=1)  +
+    labs(x="Edad estimada (años)", y= "Porcentaje de árboles") +
+    theme(text = element_text(size = 22)) +
+    ggtitle("b)")
+```
+
+Panel c)
+```{r,fig.height=7, fig.width=10 }
+p_c<-p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage),
+           position = "fill") +
+  labs(x="Edad estimada (años)", y= "Porcentaje de árboles") +
+  theme(text = element_text(size = 22))+
+  ggtitle("c)")
+```
+
+Multiplot: 
+```{r, fig.height=14, fig.width=20}
+multiplot(p_a, p_b, p_c, layout = matrix(c(1,1,2,3), nrow=2, byrow=TRUE))
+```
+**Figura 6. Diferencias en el estado de salud según la edad de los árboles en árboles menores a 15 m.** a) Distribución del número de nodos en los árboles muestreados. Cada nodo nodo se forma en un año de crecimiento, lo que permite estimar la edad de los árboles. Solo se ocuparon árboles <15 m pues es el límite en el que se pueden contar los nodos con confianza. b) La cantidad de árboles con daño por ozono o daño por ozono más otros daños aumenta con la edad. c) Los árboles más viejos tienden a tener mayor porcentaje del árbol con daño por ozono.
+
