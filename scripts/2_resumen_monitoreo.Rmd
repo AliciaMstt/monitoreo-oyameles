@@ -6,46 +6,19 @@ output:
   pdf_document: default
 ---
 
-Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac.
-
-Los datos corresponden al resultado del muestreo participativo realizado por 12 brigadistas de Santa Rosa Xochiac, utilizando kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
-
 ```{r, message=FALSE, warning=FALSE}
+### Needed packages
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(ggmap)
 library(scatterpie)
-```
 
-Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
+### Needed variables
 
-```{r, message=FALSE}
-# load data
-muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
-parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
-
-# pivot long parcelas data to have health data as a single variable
-parcelas_long<-pivot_longer(parcelas_tidy, 
-                            cols = healthy:worm, 
-                            names_to = "tree_health_simplified",
-                            values_to = "n_trees")
-```
-
-Los datos analizados aquí corresponden sólo a los árboles que fueron aprovados durante la validación revisando manualmente las fotografías en kobotoolbox. Del total de `r nrow(muestreo_tidy)` árboles muestreados, `r sum(muestreo_tidy$X_validation_status=="validation_status_approved")` fueron aprovados en la validación.
-
-```{r}
-muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
-```
-
-
-## Distribución del estado de salud de los árboles por parcela
-
-La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
-
-```{r, message=FALSE}
 # Make a nice color pallete and legend order for all plots
 
+##  health status
 my_cols=c("darkgreen", 
               "darkred", 
               "orangered1", 
@@ -81,10 +54,42 @@ desired_order=c("healthy",
                   "Lluvia acida", 
                   "Otro", 
                   "Muerto")
+ 
+## Damage percentage
+my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
+ 
+desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
 
 ```
 
+Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac.
 
+Los datos corresponden al resultado del muestreo participativo realizado por 12 brigadistas de Santa Rosa Xochiac, utilizando kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
+
+Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
+
+```{r, message=FALSE}
+# load data
+muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
+parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
+
+# pivot long parcelas data to have health data as a single variable
+parcelas_long<-pivot_longer(parcelas_tidy, 
+                            cols = healthy:worm, 
+                            names_to = "tree_health_simplified",
+                            values_to = "n_trees")
+```
+
+Los datos analizados aquí corresponden sólo a los árboles que fueron aprovados durante la validación revisando manualmente las fotografías en kobotoolbox. Del total de `r nrow(muestreo_tidy)` árboles muestreados, `r sum(muestreo_tidy$X_validation_status=="validation_status_approved")` fueron aprovados en la validación.
+
+```{r}
+muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
+```
+
+
+## Distribución del estado de salud de los árboles por parcela
+
+La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
 
 ```{r, message=FALSE, fig.height=5, fig.width=7}
 p <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
@@ -206,7 +211,7 @@ geom_text(data=parcelas_tidy,
   
 ```
 
-En total se muestrearon `r nrow(muestreo_tidy)` árboles de los cuales `r nrow(filter(muestreo_tidy, life_condition=="alive"))` se encontraban vivos. De estos, el `r round(nrow(filter(muestreo_tidy, tree_health_simplified=="ozone")) / nrow(filter(muestreo_tidy, life_condition=="alive")) * 100, 2)` % presentó daño por ozono, y el `r round(nrow(filter(muestreo_tidy, tree_health_simplified=="ozone_and_other")) / nrow(filter(muestreo_tidy, life_condition=="alive")) * 100, 2)` presentó daño por ozono en combinación con otro tipo de daño, lo que hace al ozono la fuente de daño más abundante de estos bosques. 
+En total se muestrearon `r nrow(muestreo_tidy)` árboles de los cuales `r nrow(filter(muestreo_tidy, life_condition=="alive"))` se encontraban vivos. De estos, el `r round(nrow(filter(muestreo_tidy, tree_health_simplified=="ozone")) / nrow(filter(muestreo_tidy, life_condition=="alive")) * 100, 2)`% presentó daño por ozono, y el `r round(nrow(filter(muestreo_tidy, tree_health_simplified=="ozone_and_other")) / nrow(filter(muestreo_tidy, life_condition=="alive")) * 100, 2)`% presentó daño por ozono en combinación con otro tipo de daño, lo que hace al ozono la fuente de daño más abundante de estos bosques. 
 
 A continuación analizamos el daño por ozono en términos de porcentaje de árboles dañados por parcela. 
 
@@ -326,7 +331,7 @@ p2 +
 
 ```
 
-Explorar con mayor detalle los árboles menores a 15 metros:
+Ahora nos enfocamos en los árboles <15 m porque esta es la altura máxima en la cual podemos contar los nodos (lo que sirve para estimar la edad, como se explica más adelante):
 
 ```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
@@ -344,7 +349,7 @@ p + geom_histogram(aes(x=tree_heigth,
   
 ```
 
-Podemos ver lo mismo, pero con el número de nodos:
+Cada nodo se forma en un año de crecimiento, lo que permite estimar la edad de los árboles. Por lo tanto, la figura de abajo nos dice cómo se distribuye el daño en diferentes edades de árboles:
 
 ```{r, message=FALSE, fig.height=9, fig.width=11}
 pnodos <- p + geom_histogram(aes(x=tree_nodes, 
@@ -357,7 +362,7 @@ pnodos
   
 ```
 
-Y si fueron reforestadas o no:
+Exploremos la figura anterior pero dividiendo en si fueron reforestadas o no:
 
 ```{r, message=FALSE, fig.height=9, fig.width=13}
 pnodos + facet_grid(. ~ reforested,
@@ -365,7 +370,7 @@ pnodos + facet_grid(. ~ reforested,
                                     "no" = "natural")))
 ```
 
-En términos porcentuales:
+Al examinar esto en términos porcentuales, podemos observar que la cantidad de árboles con daño por ozono (o daño por ozono más otros daños) aumenta con la edad: 
 
 ```{r, message=FALSE, fig.height=9, fig.width=11}
 pnodos <- p + geom_histogram(aes(x=tree_nodes, 
@@ -383,10 +388,9 @@ pnodos + facet_grid(. ~ reforested,
   
 ```
 
+También podemos explorar la distribución del daño por categorías diamétricas, donde encontramos un patrón parecido al anterior.
 
-
-
-También lo podemos explorar por categorías diamétricas:
+Por número de árboles:
 
 ```{r, message=FALSE, fig.height=9, fig.width=11}
 # changer order of levels of tree_diameter_category
@@ -439,9 +443,7 @@ filter(muestreo_tidy, tree_heigth<15, !is.na(tree_diameter_category)) %>%
 Ahora evaluaremos el nivel del daño por ozono, es decir, qué porcentaje del árbol se encuentra dañado, dentro del subset de árboles que están dañados.
 
 ```{r}
-my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
-desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
-
+## base data
 p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
             ggplot() +
             scale_fill_manual(values= my_cols2, 
@@ -453,20 +455,7 @@ p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
 
 ```
 
-```{r, fig.height=9, fig.width=11}
-p_od +
-  geom_bar(aes(x=tree_exposition,
-               fill=ozone_damage_percentage),
-           position = "fill") +
-    facet_grid(. ~ reforested, 
-             labeller = as_labeller(c("yes" = "reforestado",
-                                    "no" = "natural"))) +
-  scale_x_discrete(breaks=c("cover", "exposed"),
-        labels=c("cubierto", "expuesto")) +
-    labs(x="", y= "Porcentaje de árboles") +
-  ggtitle("b)")
-```
-
+Las siguientes figuras muestran que los árboles más viejos tienden a tener mayor porcentaje del árbol con daño por ozono, aunque los árboles más dañados (>70% del árbol) se encuentran en edades jóvenes e intermedias.
 
 ```{r, fig.height=9, fig.width=11}
 p_od +
@@ -487,8 +476,6 @@ p_od +
   labs(x="Número de nodos", y= "Número de árboles") +
   ggtitle("Porcentaje del árbol dañado por ozono en árboles <15 m") + 
   theme(plot.title = element_text(lineheight=1.1, face="bold"))
-
-
 ```
 
 En términos porcentuales:
@@ -503,7 +490,7 @@ p_od +
   theme(plot.title = element_text(lineheight=1.1, face="bold"))
 ```
 
-Y dividido por reforestadas y naturales:
+Al explorar la distribución entre árboles de regeneración natural y reforestaciones notamos una tendencia de mayor porcentaje de daño en las plantas reforestadas en comparación a plantas de regeneración natural de la misma edad:
 
 ```{r, fig.height=9, fig.width=14}
 p_od +
@@ -533,6 +520,26 @@ p_od +
 
 ```
 
+Sin embargo, parece que la exposición (una planta se consideró expuesta si no estaba a la sombra inmediata de otro árbol o arbusto) puede influir en qué tan dañada está una planta:
+
+```{r, fig.height=9, fig.width=11}
+# plot
+p_od +
+  geom_bar(aes(x=tree_exposition,
+               fill=ozone_damage_percentage),
+           position = "fill") +
+    facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforestado",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cubierto", "expuesto")) +
+    labs(x="", y= "Porcentaje de árboles") +
+  ggtitle("Porcentaje del árbol dañado por ozono") + 
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+```
+
+Finalmente, hay una tendencia a que mayor porcentaje del árbol se encuentre dañado cuando además del ozono, el árbol presenta síntomas de alguna otra fuente de estrés:
+
 ```{r, fig.height=9, fig.width=15}
 p_od +
   geom_bar(aes(x=tree_nodes,
@@ -545,3 +552,5 @@ p_od +
              labeller = as_labeller(c("ozone" = "Sólo daño por ozono",
                                     "ozone_and_other" = "Daño por ozono y otro")))
 ```
+
+Fi
