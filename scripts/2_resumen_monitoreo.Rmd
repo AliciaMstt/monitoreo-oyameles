@@ -553,4 +553,29 @@ p_od +
                                     "ozone_and_other" = "Daño por ozono y otro")))
 ```
 
-Fi
+## Distribución del estado de salud en diferentes reforestaciones.
+
+```{r}
+refos<-filter(muestreo_tidy, reforested=="yes")
+nrow(refos)
+```
+
+En esta seccion exploramos el estado de salud de las plantas concentrándonos únicamente en las plantas reforestadas, que en total son `r nrow(refos)`.
+
+
+```{r, fig.height=9, fig.width=15}
+refos %>% 
+     ggplot(.) +
+     geom_bar(aes(x=reforestation_year, 
+                      fill=tree_health_simplified),
+                      stat="count")  +
+    scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= spanish_labels,
+                    name= "Estado de salud del árbol") +
+    theme_bw() +
+    labs(x="Etiqueta de reforestación", y= "Número de árboles") +
+    ggtitle("Estado de salud de los árboles según la reforestación") +
+    theme(plot.title = element_text(lineheight=1.1, face="bold")) + 
+    theme(text = element_text(size = 25)) 
+```
+

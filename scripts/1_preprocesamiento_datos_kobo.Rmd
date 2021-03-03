@@ -9,6 +9,7 @@ output:
 library(dplyr)
 library(tidyr)
 library(readr)
+library(stringr)
 ```
 
 Data exported from kobo need to be processed to a tidy format that R can manipulate more easily. 
@@ -289,10 +290,14 @@ muestreo$reforestation_code[muestreo$reforestation_code==""] <- NA
 
 ```
 
-Create a new variable with only the year data:
+Create a new variable with only the year data (keeping NP):
 
 ```{r}
-muestreo<-mutate(muestreo, reforestation_year=parse_number(reforestation_code, na="NP"))
+# delete SRX
+muestreo$reforestation_year<-gsub("SRX", "", muestreo$reforestation_code)
+# delete white spaces
+muestreo$reforestation_year<-str_trim(muestreo$reforestation_year, side="both")
+# check
 table(muestreo$reforestation_year)
 ```
 
