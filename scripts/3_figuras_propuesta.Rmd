@@ -15,6 +15,7 @@ library(tidyr)
 library(ggplot2)
 library(ggmap)
 library(scatterpie)
+library(rgdal)
 ```
 
 Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
@@ -136,14 +137,9 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 }
 ```
 
-# Figuras del monitoreo para la propuesta en extenso:
+Configure google api for maps:
 
-### Figura 4:
-
-Mapa satelital con pies:
-
-```{r, message=FALSE, fig.height=7, fig.width=7}
-
+``` {r}
 # code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-g0ogle-map.html
 
 ## configure google api
@@ -161,6 +157,68 @@ Mapa satelital con pies:
 ##  load and register api
 api <- readLines("api_key.api")
 register_google(key = api)
+```
+
+# Figuras del mapa y monitoreo para la propuesta en extenso:
+
+## Figure 1
+
+Ubicación del PNDL en mapa de la CDMX
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# get cdmx shape
+CDMX<-readOGR(dsn="../data/spatial", layer="CDMX")
+CDMX<-fortify(CDMX)
+
+# get PNDL shape
+PNDL<-readOGR(dsn="../data/spatial", layer="Desierto_Leones_Geo_ITRF08")
+PNDL<-fortify(PNDL)
+
+# get background map
+sat_map = get_map(location = c(lon = -99.133549, lat = 19.3), zoom = 10, maptype = 'terrain-background', source = "google")
+
+## plot
+ggmap(sat_map) + 
+            geom_polygon(data = CDMX,
+                         aes(x = long, y = lat, group = group),
+                         color="black", fill=NA, size=1.5) +
+            geom_polygon(data = PNDL,
+                         aes(x = long, y = lat, group = group),
+                         color="red", fill=NA, size=1.5) +
+            theme(text = element_text(size = 20))
+
+```
+
+Imagen satelital y alrededores del PNDL
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# get background map
+sat_map = get_map(location = c(lon = -99.30, lat = 19.31), zoom = 13, maptype = 'satellite', source = "google")
+
+## add towns names
+towns<-data.frame(nombre=c("San Bartolo Ameyalco", 
+                           "Santa Rosa Xochiac", 
+                           "San Mateo Tlaltenango"),
+                  long=c(-99.270, -99.29, -99.276),
+                  lat=c(19.333, 19.325, 19.346))
+
+## plot
+ggmap(sat_map) + 
+            geom_polygon(data = PNDL,
+                         aes(x = long, y = lat, group = group),
+                         color="red", fill=NA, size=1.5) +
+            geom_text(label="PNDL", x=-99.315, y=19.295, color="white", size=7) +
+            geom_point(data=towns, aes(x=long, y=lat), colour="red", size=1.5) +
+            geom_text(data=towns, aes(label=nombre, x=long, y=lat), 
+                      color="white", fontface="bold",
+                      size=5, nudge_y=0.003)+
+            theme(text = element_text(size = 20))
+
+```
+
+### Figura 4:
+
+Mapa satelital con pies:
+
+```{r, message=FALSE, fig.height=7, fig.width=7}
 
 ## plot map
 # get map
