@@ -161,7 +161,7 @@ register_google(key = api)
 
 # Figuras del mapa y monitoreo para la propuesta en extenso:
 
-## Figure 1
+## Figura 2
 
 Ubicación del PNDL en mapa de la CDMX
 ```{r, fig.height=6, fig.width=6, message=FALSE}
