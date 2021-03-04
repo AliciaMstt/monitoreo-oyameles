@@ -177,7 +177,7 @@ PNDL<-fortify(PNDL)
 sat_map = get_map(location = c(lon = -99.133549, lat = 19.3), zoom = 10, maptype = 'terrain-background', source = "google")
 
 ## plot
-ggmap(sat_map) + 
+p_a<-ggmap(sat_map) + 
             geom_polygon(data = CDMX,
                          aes(x = long, y = lat, group = group),
                          color="black", fill=NA, size=1.5) +
@@ -185,6 +185,7 @@ ggmap(sat_map) +
                          aes(x = long, y = lat, group = group),
                          color="red", fill=NA, size=1.5) +
             theme(text = element_text(size = 20))
+p_a
 
 ```
 
@@ -200,18 +201,30 @@ towns<-data.frame(nombre=c("San Bartolo Ameyalco",
                   long=c(-99.270, -99.29, -99.276),
                   lat=c(19.333, 19.325, 19.346))
 
+
+
 ## plot
-ggmap(sat_map) + 
+p_b<-ggmap(sat_map) + 
             geom_polygon(data = PNDL,
                          aes(x = long, y = lat, group = group),
                          color="red", fill=NA, size=1.5) +
-            geom_text(label="PNDL", x=-99.315, y=19.295, color="white", size=7) +
             geom_point(data=towns, aes(x=long, y=lat), colour="red", size=1.5) +
             geom_text(data=towns, aes(label=nombre, x=long, y=lat), 
                       color="white", fontface="bold",
-                      size=5, nudge_y=0.003)+
+                      size=5, nudge_y=0.003) +
+  # add Cruz de Coloxtitla (CX), and Convento (Cn) landmarks
+            geom_text(aes(label="X", x=-99.3014, y=19.286068), 
+                      color="white", fontface="bold", size=4) +
+            geom_text(aes(label="C", x=-99.31, y=19.3133), 
+                      color="white", fontface="bold", size=4) +
             theme(text = element_text(size = 20))
+p_b
+```
 
+
+Multiplot
+```{r, message=FALSE, fig.height=6, fig.width=16}
+multiplot(p_a, p_b, cols=2)
 ```
 
 ### Figura 4:
