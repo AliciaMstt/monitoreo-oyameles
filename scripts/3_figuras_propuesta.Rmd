@@ -184,9 +184,15 @@ p_a<-ggmap(sat_map) +
             geom_polygon(data = PNDL,
                          aes(x = long, y = lat, group = group),
                          color="red", fill=NA, size=1.5) +
+            geom_point(aes(x=-98.95, y=19.6), 
+                       shape=0, stroke=2, size=5, color="black") +
+            geom_point(aes(x=-98.95, y=19.55), 
+                       shape=0, stroke=2, size=5, color="red") +
+            geom_text(aes(label="CDMX", x=-98.87, y=19.6), 
+                      color="Black", fontface="bold", size=5) +
+            geom_text(aes(label="PNDL", x=-98.87, y=19.55), 
+                      color="Black", fontface="bold", size=5) +
             theme(text = element_text(size = 20))
-p_a
-
 ```
 
 Imagen satelital y alrededores del PNDL
@@ -218,7 +224,6 @@ p_b<-ggmap(sat_map) +
             geom_text(aes(label="C", x=-99.31, y=19.3133), 
                       color="white", fontface="bold", size=4) +
             theme(text = element_text(size = 20))
-p_b
 ```
 
 
