@@ -4,7 +4,7 @@ Datos y análisis del monitoreo participativo del estado de salud de árboles de
 
 Estos resultados forman parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5, y son uno de los insumos de la elaboración de la propuesta en extenso de la convocatoria Proyectos Nacionales de Investigación e Incidencia para la Sustentabilidad de los Sistemas Socioecológicos.
 
-El monitoreo fue realizado por brigadistas de Santa Rosa Xochiac durante diciembre 2020 y enero 2021. En total se muestrearon 48 parcelas de 10 x 10 m dentro del polígono del Parque Nacional Desierto de los Leones y Santa Rosa Xochiac. Dentro de cada parcela se censaron todos los árboles de oyamel superiores a 20 cm de alto o 0.5 cm de dimámetro, con un total de más de 1,700 árboles muestreados. De cada árbol se tomaron datos dasométricos, fenológicos y de salud, así como fotografías y muestras de tejido que fueron preservadas en sílica gel. De las parcelas se tomaron datos sobre la cobertura forestal y arbustiva, suelo, especies vegetales dominantes, pendiente, entre otros. Ver sección "Formularios kobo" para detalles.
+El monitoreo fue realizado por brigadistas de Santa Rosa Xochiac durante diciembre 2020 y enero 2021. En total se muestrearon 48 parcelas de 10 x 10 m dentro del polígono del Parque Nacional Desierto de los Leones y Santa Rosa Xochiac. Dentro de cada parcela se censaron todos los árboles de oyamel superiores a 20 cm de alto o 0.5 cm de dimámetro, con un total de más de 1,700 árboles muestreados. Ver sección "Formularios kobo" para detalles.
 
 Los datos se tomaron con la aplicación kobo-toolbox instalada en los servidores de la conabio (kobo.conabio.gob.mx). Todos los árboles fueron etiquetados en campo con etiquetas de madera biodegradables. Todos las fotografías fueron revisadas manualmente como parte del control de calidad.
 
@@ -30,11 +30,11 @@ Una vez que los datos son limpiados y organizados por el script [scripts/1\_prep
 * **muestreo\_dic2020\_tidy.txt**: datos de las 48 parcelas tras el procesamiento de limpieza.
 * **parcelas\_dic2020\_tidy.txt**: además de los datos originales, incluye la suma de árboles bajo cada categoría de salud (sano, daño por ozno, entre otros).
 
-### data/kobo_images
+### `data/kobo_images`
 
 Contiene las fotografías tomadas en campo de cada árbol. Por el momento este contenido sólo está disponible localmente en los servidores de la CONABIO.
 
-### data/spatial
+### `data/spatial`
 
 Contiene en formato shapefile los archivos:
 
@@ -47,9 +47,9 @@ Mismos que fueron utilizados junto con imágenes satelitales de google (ver `scr
 
 ## Análisis y reporte de resultados
 
-Los datos se procesaron con los siguientes scripts:
+Los datos se procesaron con los siguientes scripts. De cada script existe también una versión html del mismo nombre que muestra el código y los resultados. 
 
-### [scripts/1\_preprocesamiento\_datos\_kobo.Rmd](scripts/1_preprocesamiento_datos_kobo.Rmd): 
+### [scripts/1\_preprocesamiento\_datos\_kobo](scripts/1_preprocesamiento_datos_kobo.Rmd): 
 Toma los datos crudos generados en kobo (*_raw.txt) y realiza un proceso de control de calidad con los siguientes pasos generales:
 
 * Revisión de errores comunes (eg. valores fuera de rango)
@@ -58,7 +58,7 @@ Toma los datos crudos generados en kobo (*_raw.txt) y realiza un proceso de cont
 * Examinar y limpiar notas sobre reforestación
 * Reformatear datos a formato "largo" para análisis y exportar datos (*_tidy.txt)
 
-### [scripts/2\_resumen\_monitoreo.Rmd](scripts/2_resumen_monitoreo.Rmd): 
+### [scripts/2\_resumen\_monitoreo](scripts/2_resumen_monitoreo.Rmd): 
 
 Utiliza los datos limpios (*_tidy.txt) para hacer un reporte del monitoreo participativo que incluye: 
 
@@ -67,8 +67,30 @@ Utiliza los datos limpios (*_tidy.txt) para hacer un reporte del monitoreo parti
 * Estado de salud de árboles individuales según: origen (natural, reforestado), exposición (cubierto/expuesto), altura, diámetro, edad
 * Porcentaje de daño del árbol dañado por ozono en áboles individuales según: origen (natural, reforestado), exposición (cubierto/expuesto), altura, diámetro y edad.
 
-### [scripts/3\_figuras\_propuesta.Rmd](scripts/3_figuras_propuesta.Rmd):
+### [scripts/3\_figuras\_propuesta](scripts/3_figuras_propuesta.Rmd):
 
 Utiliza los datos limpios (*_tidy.txt) para hacer el subconjunto de figuras del reporte que se utilizaron para la propuesta en extenso.
+
+
+## Formularios kobo
+
+
+Los formularios kobo utilizados se encuentran en el directorio `/kobo_forms`. Los formularios se presentan en formato .xlsx, lo que permite importarlos en el servidor web de kobo, y en formato .pdf, lo que permite visualizar más fácilmente las preguntas.
+
+### Formulario CX\_Colecta\_Censo\_2020
+
+Formulario utilizado por las personas brigadistas para la recolección de datos de árboles individuales dentro de las parcelas.
+
+De cada árbol se tomaron coordenadas geográficas, datos dasométricos, fenológicos y de salud, origen (reforestado/natural), exposición (expuesto/cubierto) si habían sido utilizados como fuente de semilla, fotografías y muestras de tejido que fueron preservadas en sílica gel. Ver versión pdf para la lista de preguntas completas.
+
+### Formulario CX\_Parcelas\_censo\_oyameles
+
+Formulario utilizado por el equipo académico para el levantamiento de datos de las parcelas.
+
+De cada parcela se tomaron datos sobre la cobertura forestal y arbustiva, suelo, especies vegetales dominantes, pendiente y relieve. 
+
+
+
+
 
 
