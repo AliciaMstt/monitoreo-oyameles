@@ -4,7 +4,12 @@ output:
   html_document:
     df_print: paged
   pdf_document: default
+  word_document: default
 ---
+
+```{r include = FALSE}
+#knitr::opts_chunk$set(echo=FALSE) #uncomment this to knit hiding code
+```
 
 ```{r, message=FALSE, warning=FALSE}
 ### Needed packages
@@ -91,7 +96,7 @@ muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_ap
 
 La siguiente figura muestra el total de árboles muestreados en cada parcela de 10x10 m, y cuántos de estos están bajo alguna categoría de daño:
 
-```{r, message=FALSE, fig.height=5, fig.width=7}
+```{r, message=FALSE, fig.height=9, fig.width=11}
 p <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values= my_cols, breaks = desired_order,
@@ -103,7 +108,7 @@ p + theme_bw() +
   ggtitle("Estado de salud de los árboles por parcela") + 
      theme(plot.title = element_text(lineheight=1.1, face="bold")) +
   labs(x="Parcelas", y= "número de árboles") +
-  theme(text = element_text(size = 25)) 
+  theme(text = element_text(size = 20)) 
 
 ```
 
