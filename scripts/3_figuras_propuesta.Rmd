@@ -226,10 +226,49 @@ p_b<-ggmap(sat_map) +
             theme(text = element_text(size = 20))
 ```
 
+Zonas de reforestación de SRX
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# get background map
+sat_map = get_map(location = c(lon = -99.30, lat = 19.305), zoom = 14, maptype = 'satellite', source = "google")
+
+# get reforestation shapes
+# 2011-2012
+SRX2011_12<-readOGR(dsn="../data/spatial/reforesSRX", layer="Poly_Sta_RosaX_Ref_2011-2012_CORR")
+SRX2011_12<-fortify(SRX2011_12)
+
+#2013 high altitude
+SRX2013_high<-readOGR(dsn="../data/spatial/reforesSRX", layer="Poly_Parte_Alta_Ref_2013_CORR")
+SRX2013_high<-fortify(SRX2013_high)
+
+#2013 low altitude
+SRX2013_low<-readOGR(dsn="../data/spatial/reforesSRX", layer="Poly_Parte_Baja_Ref_2013_CORR")
+SRX2013_low<-fortify(SRX2013_low)
+
+
+## plot
+p_c<-ggmap(sat_map) + 
+            geom_polygon(data = SRX2011_12,
+                         aes(x = long, y = lat, group = group),
+                         color="green", fill=NA, size=1) +
+            geom_polygon(data = SRX2013_high,
+                         aes(x = long, y = lat, group = group),
+                         color="green", fill=NA, size=1) +
+              geom_polygon(data = SRX2013_low,
+                         aes(x = long, y = lat, group = group),
+                         color="green", fill=NA, size=1) +
+  geom_point(data=parcelas_tidy,
+                aes(x=X_coordinates_longitude,
+                    y=X_coordinates_latitude),
+             color="red") +
+  # add Cruz de Coloxtitla (CX) landmark
+            geom_text(aes(label="X", x=-99.3014, y=19.286068), 
+                      color="white", fontface="bold", size=4) +
+            theme(text = element_text(size = 20)) 
+```
 
 Multiplot
-```{r, message=FALSE, fig.height=6, fig.width=16}
-multiplot(p_a, p_b, cols=2)
+```{r, message=FALSE, fig.height=12, fig.width=16}
+multiplot(p_a, p_c, p_b, cols=2)
 ```
 
 ### Figura 4:
