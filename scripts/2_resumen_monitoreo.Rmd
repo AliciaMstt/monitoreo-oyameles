@@ -67,9 +67,9 @@ desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70
 
 ```
 
-Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac.
+Este reporte explora los resultados del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Bienes Comunales Santa Rosa Xochiac.
 
-Los datos corresponden al resultado del muestreo participativo realizado por 12 brigadistas de Santa Rosa Xochiac, utilizando kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
+Los datos corresponden al resultado del muestreo participativo realizado por 12 brigadistas de Bienes Comunales Santa Rosa Xochiac, utilizando kobo-conabio como parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5.
 
 Los datos del muestreo corresponden a los datos colectados con kobo y limpiados previamente con el script `1_preprocesamiento_datos_kobo.Rmd`.
 
