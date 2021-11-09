@@ -1,14 +1,14 @@
 # monitoreo-oyameles
 
-Datos y análisis del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Santa Rosa Xochiac, cuyo resuumen de resultados [puede verse aquí](scripts/2_resumen_monitoreo_no_code.pdf). 
+Datos y análisis del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Bienes Comunales Santa Rosa Xochiac, cuyo resuumen de resultados [puede verse aquí](scripts/2_resumen_monitoreo_no_code.pdf). 
 
 Estos resultados forman parte del proyecto 308488 *Monitoreo y manejo para la conservación de bosques aledaños a la CDMX afectados por contaminación atmosférica* de la convocatoria FORDECYT 2019-5, y son uno de los insumos de la elaboración de la propuesta en extenso de la convocatoria Proyectos Nacionales de Investigación e Incidencia para la Sustentabilidad de los Sistemas Socioecológicos.
 
-El monitoreo fue realizado por brigadistas de Santa Rosa Xochiac durante diciembre 2020 y enero 2021. En total se muestrearon 48 parcelas de 10 x 10 m dentro del polígono del Parque Nacional Desierto de los Leones y Santa Rosa Xochiac. Dentro de cada parcela se censaron todos los árboles de oyamel superiores a 20 cm de alto o 0.5 cm de dimámetro, con un total de más de 1,700 árboles muestreados. Ver sección "Formularios kobo" para detalles.
+El monitoreo fue realizado por brigadistas de Bienes Comunales Santa Rosa Xochiac durante diciembre 2020 y enero 2021. En total se muestrearon 48 parcelas de 10 x 10 m dentro del polígono del Parque Nacional Desierto de los Leones y Santa Rosa Xochiac. Dentro de cada parcela se censaron todos los árboles de oyamel superiores a 20 cm de alto o 0.5 cm de dimámetro, con un total de más de 1,700 árboles muestreados. Ver sección "Formularios kobo" para detalles.
 
 Los datos se tomaron con la aplicación kobo-toolbox instalada en los servidores de la conabio (kobo.conabio.gob.mx). Todos los árboles fueron etiquetados en campo con etiquetas de madera biodegradables. Todos las fotografías fueron revisadas manualmente como parte del control de calidad.
 
-Se realizó un taller de retroalimentación con la comunidad de Santa Rosa Xochiac donde se discutieron tanto los resultados del monitoreo como oportunidades de mejora en su impliementación en campo.
+Se realizó un taller de retroalimentación con la comunidad de Bienes Comunales Santa Rosa Xochiac donde se discutieron tanto los resultados del monitoreo como oportunidades de mejora en su impliementación en campo.
 
 
 ## Datos
