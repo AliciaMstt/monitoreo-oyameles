@@ -16,7 +16,7 @@ Data exported from kobo need to be processed to a tidy format that R can manipul
 
 ## Trees sampling
 
-Trees sampling was done by the 12 brigadistas in 48 plots of 10 x 10 m, using a kobo form.
+Trees sampling was done by the 12 brigadistas in 48 plots of 10 x 10 m, using a kobo form. 
 
 ### Load data and check for basic errors
 
@@ -147,10 +147,10 @@ We can't have "healthy + a damage condition". If this appears this is an error m
 
 
 ```{r}
-# check if there are any trees with healthy + other. If this is the case, there should be an " " after healthy
-muestreo[grep("healthy ", muestreo$tree_health), c("plot", "tree_id")]
+# check if there are any trees with healthy + other. If this is the case, there should be an " " after healthy. Only non-approved records should appear here:
+muestreo[grep("healthy ", muestreo$tree_health), c("plot", "tree_id", "X_validation_status")]
 
-# remove any tree labeled with healthy + something else
+# remove any tree labeled with healthy + something else, independently of its validation status
 muestreo<-muestreo[grep("healthy ", muestreo$tree_health, invert=TRUE), ]
 
 # check
@@ -300,6 +300,15 @@ muestreo$reforestation_year<-str_trim(muestreo$reforestation_year, side="both")
 # check
 table(muestreo$reforestation_year)
 ```
+
+### Check Validation status
+
+The previous code checked for capture errors and re-formated the data accordingly. The validation of each record in terms of the type damage meeting the picture was done manually in the web app. Downstream analyses filter data in order to only perform analyses with approved records. The distribution of approved and not approved records is as follows:
+
+```{r}
+table(muestreo$X_validation_status)
+```
+
 
 
 ## Sampling plots
