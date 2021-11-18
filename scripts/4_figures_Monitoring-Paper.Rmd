@@ -68,6 +68,18 @@ desired_order=c("healthy",
                 "other", 
                 "dead")
 
+desired_names=c("healthy", 
+                "ozone", 
+                "ozone and other", 
+                "others combined", 
+                "drougth", 
+                "fungi", 
+             #   "insect", 
+                "worm", 
+                "acid rain", 
+                "other", 
+                "dead")
+
 # For ozone damage percentage 
  my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
  
@@ -148,9 +160,9 @@ api <- readLines("api_key.api")
 register_google(key = api)
 ```
 
-# Map and monitoring figures for the extensive proposal:
+# Map and monitoring figures presented in the paper:
 
-## Figure 1X
+## Figure 2
 
 PNDL location on CDMX map
 
@@ -222,24 +234,6 @@ p_b<-ggmap(sat_map) +
 
 ```{r, message=FALSE, fig.height=15, fig.width=15}
 
-# code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
-
-## configure google api
-
-# You first need to register your api key in https://cloud.google.com/maps-platform/#get-started and follow instructions. The geocoding API is a free service, but you nevertheless need to associate a credit card with the account. Please note that the Google Maps API is not a free service. There is a free allowance of 40,000 calls to the geocoding API per month, and beyond that calls are $0.005 each.
-# after you obtain your api, save it in /scripts/api_key.api (not shown in this repo por obvious reasons).
-
-# if you get the following error when running get_map():
-
-#"Error in aperm.default(map, c(2, 1, 3)) : 
-#  invalid first argument, must be an array " 
-
-# check this troubleshooting: https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
-
-##  load and register api
-api <- readLines("api_key.api")
-register_google(key = api)
-
 ## plot map
 # get map
 sat_map = get_map(location = c(lon = -99.3060, lat = 19.2909), zoom = 14, maptype = 'satellite', source = "google")
@@ -255,10 +249,10 @@ p_c <- p_c + geom_point(data=parcelas_tidy,
                           y=X_coordinates_latitude,
                           label=plot),
                       color="white",
-                 #    check_overlap = TRUE,
+                     check_overlap = TRUE,
                       hjust = 0, vjust=1, nudge_x = 0.0005,
                  size= 5) +
-    theme(text = element_text(size = 30))+
+    theme(text = element_text(size = 20))+
   ggtitle("c)")
 ```
 
@@ -270,12 +264,11 @@ The following figure shows the total number of trees sampled in each 10x10 m plo
 p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values= my_cols, breaks = desired_order,
-                    labels= desired_order,
-                    name= "Status of healthy") 
+                    labels= desired_names,
+                    name= "Health category") 
   
 
 p_d <- p_d + theme_bw() +
-     theme(plot.title = element_text(lineheight=1.1, face="bold")) +
   labs(x="Plots", y= "Number of trees") +
   theme(text = element_text(size = 20)) +
   ggtitle("d)")
