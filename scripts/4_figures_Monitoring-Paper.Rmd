@@ -162,9 +162,9 @@ register_google(key = api)
 
 # Map and monitoring figures presented in the paper:
 
-## Figure 2
+# Figure 2
 
-PNDL location on CDMX map
+## PNDL location on CDMX map
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 # get cdmx shape
@@ -198,7 +198,7 @@ p_a<-ggmap(sat_map) +
   ggtitle("a)")
 ```
 
-Satellite image and surroundings of the PNDL
+## Satellite image and surroundings of the PNDL
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 # get background map
 sat_map = get_map(location = c(lon = -99.30, lat = 19.31), zoom = 13, maptype = 'satellite', source = "google")
@@ -281,3 +281,120 @@ Multiplot
 multiplot(p_a, p_c, p_b, p_d, cols=2)
 ```
 
+# Figure 3
+
+```{r, message=FALSE, fig.height=9, fig.width=11}
+p3 <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
+                      fill=tree_health_simplified)) +
+       geom_bar(stat="count") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_order,
+                    name= "Status of healthy") +  
+  facet_grid(. ~ reforested, 
+             labeller = as_labeller(c("yes" = "reforested",
+                                    "no" = "natural"))) +
+  scale_x_discrete(breaks=c("cover", "exposed"),
+        labels=c("cover", "exposed"))
+p3 + theme_bw() +
+     theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  labs(x="", y= "Number of trees") +
+  theme(text = element_text(size = 20)) 
+```
+
+
+# Figure 4
+
+## Plot 4a
+
+```{r, message=FALSE, fig.height=9, fig.width=11}
+p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
+     ggplot(.) +
+     scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_order,
+                    name= "Status of healthy") +
+theme_bw()
+
+p4_a <- p + geom_histogram(aes(x=tree_nodes, 
+                      fill=tree_health_simplified))  +
+    labs(x="Number of nodes", y= "Number of trees") +
+    theme(text = element_text(size = 20)) +
+     theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  ggtitle("a)")
+
+p4_a
+  
+  
+```
+
+## Plot 4b
+
+```{r, fig.height=9, fig.width=13}
+## base data
+p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
+            ggplot() +
+            scale_fill_manual(values= my_cols2, 
+                              breaks = desired_order_percentage,
+                              labels = c("less 10%", "10 to 40%", "40 to 50%",
+                                         "50 to 70%", "more 70%"),
+                              name= "Tree ozone damage percentage") +
+            theme_bw() + theme(text = element_text(size = 20)) 
+
+p4_b <- p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage)) +
+  labs(x="Number of nodes", y= "Number of trees") +
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  ggtitle("b)")
+p4_b 
+
+```
+
+# Plot 4c
+```{r, message=FALSE, fig.height=12, fig.width=16}
+
+# Filtrar por categoría de daño
+condition_HOO<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" )
+
+condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
+
+# Plot
+p4_c<-condition_HOO%>%
+   ggplot(aes(y= tree_nodes, x= tree_health_simplified))+
+          geom_boxplot(color="grey", notch = F)+
+        scale_color_manual(values=  my_cols)+
+        geom_point(position="jitter",aes(color = tree_health_simplified), alpha=0.5)+
+    theme(axis.text.x=element_text(colour="black", size = 8, 
+                                 angle = 45, vjust = 1, hjust = 1),
+        axis.text.y=element_text(colour="black", size = 7, angle = 0))+
+        xlab("Status of healthy")+ ylab("Tree nodes")+
+  labs(color = "Status of healthy")+
+  ggtitle("c)")
+p4_c
+```
+
+# Plot 4d
+```{r, message=FALSE, fig.height=12, fig.width=16}
+
+# Plot
+
+muestreo_tidy$ozone_damage_percentage
+p4_d<-muestreo_tidy%>%
+   ggplot(aes(y= tree_nodes, x= ozone_damage_percentage))+
+          geom_boxplot(color="grey", notch = F)+
+        scale_color_manual(values=  my_cols2)+
+        geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5)+
+    theme(axis.text.x=element_text(colour="black", size = 8, 
+                                 angle = 45, vjust = 1, hjust = 1),
+        axis.text.y=element_text(colour="black", size = 7, angle = 0))+
+        xlab("ozone damage percentage")+ ylab("Tree nodes")+
+  labs(color = "ozone damage percentage")+
+  ggtitle("d)")
+p4_d
+```
+
+
+Multiplot
+```{r, message=FALSE, fig.height=12, fig.width=16}
+multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
+```
