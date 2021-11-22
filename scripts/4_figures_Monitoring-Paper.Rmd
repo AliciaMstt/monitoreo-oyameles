@@ -450,3 +450,29 @@ p_satmap +geom_scatterpie(data=parcelas_tidy,
   theme(text = element_text(size = 20))
 
 ```
+
+# Figure S3
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+# Create new variable with porcentage of ozonoe damage
+parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
+                     mutate(., 
+                      total=sum(healthy,ozone,ozone_and_other,
+                          drougth, acid_rain, other,
+                          others_combined, dead, fungi,
+                          # insect, 
+                          worm)) %>%
+                    mutate(perc.ozone= sum(ozone, ozone_and_other)/total)
+
+#plot
+p <- ggplot(parcelas_tidy) +
+     geom_point(aes(x=X_coordinates_altitude,
+             y=perc.ozone))
+
+p + theme_bw() +
+  labs(x="Altitude of plots", 
+       y= "Tree percentage ozone damage trees")+
+       theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  theme(text = element_text(size = 16)) 
+
+```
