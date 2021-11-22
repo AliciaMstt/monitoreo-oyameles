@@ -398,3 +398,36 @@ Multiplot
 ```{r, message=FALSE, fig.height=12, fig.width=16}
 multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
 ```
+
+# Figure 5
+
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+# Filtrar por categoría de daño
+condition_HOO<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" )
+
+condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
+
+# Modelo 3  - Edad, salud y estructura espacial afectan crecimiento
+lm3<-lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + tree_exposition + reforested, data = condition_HOO)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(lm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+
+cor.test(abs(lm3$residuals), lm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(lm3)
+
+summary(lm3)
+
+# Graficar modelo 3
+Tree_height_plot<-ggplot(condition_HOO, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour= 
+tree_health_simplified)) + geom_smooth(method="lm",aes(color= tree_health_simplified), fullrange =T)+
+  scale_color_manual(values= c("#b9aa46","#a361c7", "#6ab64c", "#c65c8a", "#4fb79b", "#cb4f42", "#6587cd", "#c78143", "#607a38"))
+
+print(Tree_height_plot + labs( y = "log(Higth tree)", x = "Number of nodes") + labs(color = "Status of healthy"))
+
+```
+
