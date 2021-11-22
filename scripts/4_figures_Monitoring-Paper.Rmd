@@ -431,3 +431,22 @@ print(Tree_height_plot + labs( y = "log(Higth tree)", x = "Number of nodes") + l
 
 ```
 
+# Figure S2
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+# plot pies in map
+p_satmap <-  ggmap(sat_map)
+p_satmap +geom_scatterpie(data=parcelas_tidy,
+                aes(x=X_coordinates_longitude,
+                    y=X_coordinates_latitude,
+                    group=plot),
+                pie_scale = 1.5,
+                cols=desired_order,
+                color=NA,
+                alpha=1)  +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_order,
+                    name= "Status of healthy") +
+  theme(text = element_text(size = 20))
+
+```
