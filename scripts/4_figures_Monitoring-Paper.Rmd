@@ -17,6 +17,8 @@ library(ggmap)
 library(scatterpie)
 library(rgdal)
 library(multcompView)
+library(car)
+library(ggpmisc)
 ```
 
 
@@ -284,7 +286,7 @@ multiplot(p_a, p_c, p_b, p_d, cols=2)
 
 # Figure 3
 
-```{r, message=FALSE, fig.height=9, fig.width=11}
+```{r, fig.height=6, fig.width=6, message=FALSE}
 p3 <- ggplot(muestreo_tidy, aes(x=tree_exposition, 
                       fill=tree_health_simplified)) +
        geom_bar(stat="count") +
@@ -307,7 +309,7 @@ p3 + theme_bw() +
 
 ## Plot 4a
 
-```{r, message=FALSE, fig.height=9, fig.width=11}
+```{r, fig.height=6, fig.width=6, message=FALSE}
 p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
      ggplot(.) +
      scale_fill_manual(values= my_cols, breaks = desired_order,
@@ -329,7 +331,7 @@ p4_a
 
 ## Plot 4b
 
-```{r, fig.height=9, fig.width=13}
+```{r, fig.height=6, fig.width=6, message=FALSE}
 ## base data
 p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
             ggplot() +
@@ -351,7 +353,7 @@ p4_b
 ```
 
 # Plot 4c
-```{r, message=FALSE, fig.height=12, fig.width=16}
+```{r, fig.height=6, fig.width=6, message=FALSE}
 
 # Filtrar por categoría de daño
 condition_HOO<-muestreo_tidy%>%
@@ -370,13 +372,14 @@ p4_c<-condition_HOO%>%
           geom_boxplot(color="grey", notch = F)+
         scale_color_manual(values=  my_cols)+
         geom_point(position="jitter",aes(color = tree_health_simplified), alpha=0.5)+
-    theme(axis.text.x=element_text(colour="black", size = 8, 
-                                 angle = 45, vjust = 1, hjust = 1),
-        axis.text.y=element_text(colour="black", size = 7, angle = 0))+
         xlab("Status of healthy")+ ylab("Tree nodes")+
   labs(color = "Status of healthy")+
   theme_bw()+
-  ggtitle("c)")
+  ggtitle("c)")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank(),
+        axis.text.y=element_text(colour="black", size = 7, angle = 0))+
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+
 p4_c
 
 
@@ -399,24 +402,13 @@ group_by(condition_HOO, tree_health_simplified) %>%
     sd = sd(tree_nodes, na.rm = TRUE)
   )
 
+# Prueba de normalidad en anova
+
 # ANOVA
 a <- aov(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
 # Summary of the analysis
 summary(a)
 # rechazamos la hipótesis nula de que las medias son iguales, y decidimos que la media del numero de nodos es distinta entre las categorias.
-
-
-# Cuales son diferentes
-tHSD<-TukeyHSD(a)
-tHSD
-
-# Homogeneidad de varianzas. No hay en valores menores a 0.05
-library(car)
-leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
-
-
-pairwise.t.test(sqrt(condition_HOO$tree_nodes), condition_HOO$tree_health_simplified,
-                 p.adjust.method = "BH", pool.sd = FALSE)
 
 # Normalidad. No hay en valores menores a 0.05
 
@@ -425,12 +417,23 @@ aov_residuals <- residuals(object = a )
 # Run Shapiro-Wilk test
 shapiro.test(x = aov_residuals )
 
+# Procedo a hacer un kruskal
 
+# Debe tener homogeneidad
+leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO, center = "median")
+
+kruskal.test(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
+
+#Prueba homogeneidad de varianzas y sí hay :(
+leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO, center = "median")
+
+#poshoc que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified, p.adjust.method = "holm" )
 
 ```
 
 # Plot 4d
-```{r, message=FALSE, fig.height=12, fig.width=16}
+```{r, fig.height=6, fig.width=6, message=FALSE}
 # Filtrar por porcentaje de daño
 condition_PO<-muestreo_tidy%>%
   filter(ozone_damage_percentage == "less than 10%" | ozone_damage_percentage == "10 to 40%" | ozone_damage_percentage == "40 to 50%"| ozone_damage_percentage == "50 to 70%" | ozone_damage_percentage == "more than 70%")
@@ -456,31 +459,38 @@ p4_d<-condition_PO%>%
           geom_boxplot(color="grey", notch = F)+
         scale_color_manual(values=  my_cols2)+
         geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5)+
-    theme(axis.text.x=element_text(colour="black", size = 8, 
-                                 angle = 45, vjust = 1, hjust = 1),
-        axis.text.y=element_text(colour="black", size = 7, angle = 0))+
-        xlab("ozone damage percentage")+ ylab("Tree nodes")+
-  labs(color = "ozone damage percentage")+
+        xlab("Ozone damage percentage")+ ylab("Tree nodes")+
+  labs(color = "Ozone damage percentage")+
   theme_bw()+
-  ggtitle("d)")
+  ggtitle("d)")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank(),
+        axis.text.y=element_text(colour="black", size = 7, angle = 0))+
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))
 p4_d
 
 # Pruebas estadisticas
 
-# Homogeneidad de varianzas. No hay en valores menores a 0.05. Debe dar valores mayores a 0.05 para que haya homogeneidad
-leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
+# ANOVA
+a <- aov(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO)
+# Summary of the analysis
+summary(a)
+# rechazamos la hipótesis nula de que las medias son iguales, y decidimos que la media del numero de nodos es distinta entre las categorias.
 
-
-pairwise.t.test(sqrt(condition_PO$tree_nodes), condition_PO$ozone_damage_percentage,
-                 p.adjust.method = "BH", pool.sd = FALSE)
-
-# Normalidad. No hay en valores menores a 0.05.Debe dar valores mayores a 0.05 para que haya normalidad
-
+# Normalidad. No hay en valores menores a 0.05
 # Extract the residuals
 aov_residuals <- residuals(object = a )
 # Run Shapiro-Wilk test
 shapiro.test(x = aov_residuals )
 
+# Procedo a hacer un kruskal
+# Debe tener homogeneidad. Si es mayor a 0.05 No hay evidencias en contra de la homogeneidad de varianzas. 
+leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO, center = "median")
+
+kruskal.test(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO)
+
+
+#poshoc que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
 
 
 ```
@@ -562,10 +572,22 @@ p <- ggplot(parcelas_tidy) +
      geom_point(aes(x=X_coordinates_altitude,
              y=perc.ozone))
 
-p + theme_bw() +
-  labs(x="Altitude of plots", 
-       y= "Tree percentage ozone damage trees")+
-       theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+
+
+p<- ggplot(parcelas_tidy, aes(X_coordinates_altitude, perc.ozone ))+
+  geom_point(color= "grey50", size = 3, alpha = 0.6)
+
+p + 
+  stat_smooth(color = "skyblue", formula = y ~ x,fill = "skyblue", method = "lm") +
+  stat_poly_eq(
+    aes(label = paste(..eq.label.., ..adj.rr.label.., sep = '~~~~')),
+    formula = y ~ x,  parse = TRUE,
+      size = 10, # Tamaño de fuente de la fórmula
+             label.x = 0.1, #location, la proporción entre 0-1
+      label.y = 0.95)+
+  labs(x="Altitude of plots", y= "Tree percentage ozone damage trees")+
+  theme_bw() +
+   theme(plot.title = element_text(lineheight=1.1, face="bold")) +
   theme(text = element_text(size = 16)) 
 
 ```
