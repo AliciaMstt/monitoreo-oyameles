@@ -16,6 +16,7 @@ library(ggplot2)
 library(ggmap)
 library(scatterpie)
 library(rgdal)
+library(multcompView)
 ```
 
 
@@ -358,9 +359,14 @@ condition_HOO<-muestreo_tidy%>%
 
 condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
 
-# Plot
+
+# Data distribution
+
+# Los datos tienen a graficar es el número de nodos para cada categoria de salud.
+# Los datos son continuos discretos, por lo tanto el analisis a seguir para buscar diferencias entre los grupos son:
+# Puedo representar los resultados en boxplot
 p4_c<-condition_HOO%>%
-   ggplot(aes(y= tree_nodes, x= tree_health_simplified))+
+   ggplot(aes(y= sqrt(tree_nodes), x= tree_health_simplified))+
           geom_boxplot(color="grey", notch = F)+
         scale_color_manual(values=  my_cols)+
         geom_point(position="jitter",aes(color = tree_health_simplified), alpha=0.5)+
@@ -369,18 +375,84 @@ p4_c<-condition_HOO%>%
         axis.text.y=element_text(colour="black", size = 7, angle = 0))+
         xlab("Status of healthy")+ ylab("Tree nodes")+
   labs(color = "Status of healthy")+
+  theme_bw()+
   ggtitle("c)")
 p4_c
+
+
+condition_HOO%>%
+  ggplot(aes(x = sqrt(tree_nodes)))+
+  geom_histogram(aes(y= ..density..),
+                 binwidth = 0.1, color = "black", fill = "cyan3")+
+  xlab("Nodos en los árboles")+ ylab("Frecuencia")+
+  ggtitle("Histograma de los nodos de los árboles")+
+  stat_function(fun = dnorm, args = list(mean = mean(sqrt(muestreo_tidy$tree_nodes)), 
+                                         sd = sd(sqrt(muestreo_tidy$tree_nodes))), color= "deepskyblue4", size= 1)
+
+
+# Statistics
+
+group_by(condition_HOO, tree_health_simplified) %>%
+  summarise(
+    count = n(),
+    mean = mean(tree_nodes, na.rm = TRUE),
+    sd = sd(tree_nodes, na.rm = TRUE)
+  )
+
+# ANOVA
+a <- aov(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
+# Summary of the analysis
+summary(a)
+# rechazamos la hipótesis nula de que las medias son iguales, y decidimos que la media del numero de nodos es distinta entre las categorias.
+
+
+# Cuales son diferentes
+tHSD<-TukeyHSD(a)
+tHSD
+
+# Homogeneidad de varianzas. No hay en valores menores a 0.05
+library(car)
+leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
+
+
+pairwise.t.test(sqrt(condition_HOO$tree_nodes), condition_HOO$tree_health_simplified,
+                 p.adjust.method = "BH", pool.sd = FALSE)
+
+# Normalidad. No hay en valores menores a 0.05
+
+# Extract the residuals
+aov_residuals <- residuals(object = a )
+# Run Shapiro-Wilk test
+shapiro.test(x = aov_residuals )
+
+
+
 ```
 
 # Plot 4d
 ```{r, message=FALSE, fig.height=12, fig.width=16}
+# Filtrar por porcentaje de daño
+condition_PO<-muestreo_tidy%>%
+  filter(ozone_damage_percentage == "less than 10%" | ozone_damage_percentage == "10 to 40%" | ozone_damage_percentage == "40 to 50%"| ozone_damage_percentage == "50 to 70%" | ozone_damage_percentage == "more than 70%")
+
+condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_percentage)
+
+
+# Data distribution
+condition_PO%>%
+  ggplot(aes(x = sqrt(tree_nodes)))+
+  geom_histogram(aes(y= ..density..),
+                 binwidth = 0.1, color = "black", fill = "cyan3")+
+  xlab("Nodos en los árboles")+ ylab("Frecuencia")+
+  ggtitle("Histograma de los nodos de los árboles")+
+  stat_function(fun = dnorm, args = list(mean = mean(sqrt(muestreo_tidy$tree_nodes)), 
+                                         sd = sd(sqrt(muestreo_tidy$tree_nodes))), color= "deepskyblue4", size= 1)
 
 # Plot
 
-muestreo_tidy$ozone_damage_percentage
-p4_d<-muestreo_tidy%>%
-   ggplot(aes(y= tree_nodes, x= ozone_damage_percentage))+
+condition_PO$ozone_damage_percentage
+p4_d<-condition_PO%>%
+   ggplot(aes(y= sqrt(tree_nodes), x= ozone_damage_percentage))+
           geom_boxplot(color="grey", notch = F)+
         scale_color_manual(values=  my_cols2)+
         geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5)+
@@ -391,6 +463,25 @@ p4_d<-muestreo_tidy%>%
   labs(color = "ozone damage percentage")+
   ggtitle("d)")
 p4_d
+
+# Pruebas estadisticas
+
+# Homogeneidad de varianzas. No hay en valores menores a 0.05. Debe dar valores mayores a 0.05 para que haya homogeneidad
+leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
+
+
+pairwise.t.test(sqrt(condition_PO$tree_nodes), condition_PO$ozone_damage_percentage,
+                 p.adjust.method = "BH", pool.sd = FALSE)
+
+# Normalidad. No hay en valores menores a 0.05.Debe dar valores mayores a 0.05 para que haya normalidad
+
+# Extract the residuals
+aov_residuals <- residuals(object = a )
+# Run Shapiro-Wilk test
+shapiro.test(x = aov_residuals )
+
+
+
 ```
 
 
@@ -410,21 +501,21 @@ condition_HOO<-muestreo_tidy%>%
 condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
 
 # Modelo 3  - Edad, salud y estructura espacial afectan crecimiento
-lm3<-lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + tree_exposition + reforested, data = condition_HOO)
+glm3<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + tree_exposition + reforested, data = condition_HOO)
 
 # Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
-shapiro.test(lm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+shapiro.test(glm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
 
-cor.test(abs(lm3$residuals), lm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+cor.test(abs(glm3$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
 
 par(mfrow =c(2,2))
-plot(lm3)
+plot(glm3)
 
-summary(lm3)
+summary(glm3)
 
 # Graficar modelo 3
 Tree_height_plot<-ggplot(condition_HOO, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour= 
-tree_health_simplified)) + geom_smooth(method="lm",aes(color= tree_health_simplified), fullrange =T)+
+tree_health_simplified)) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
   scale_color_manual(values= my_cols)
 
 print(Tree_height_plot + labs( y = "log(Higth tree)", x = "Number of nodes") + labs(color = "Status of healthy"))
