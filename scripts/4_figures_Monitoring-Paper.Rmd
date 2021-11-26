@@ -461,6 +461,7 @@ p4_d<-condition_PO%>%
         axis.text.y=element_text(colour="black", size = 7, angle = 0))+
         xlab("ozone damage percentage")+ ylab("Tree nodes")+
   labs(color = "ozone damage percentage")+
+  theme_bw()+
   ggtitle("d)")
 p4_d
 
@@ -516,7 +517,8 @@ summary(glm3)
 # Graficar modelo 3
 Tree_height_plot<-ggplot(condition_HOO, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour= 
 tree_health_simplified)) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
-  scale_color_manual(values= my_cols)
+  scale_color_manual(values= my_cols)+
+  theme_bw()
 
 print(Tree_height_plot + labs( y = "log(Higth tree)", x = "Number of nodes") + labs(color = "Status of healthy"))
 
