@@ -90,9 +90,9 @@ desired_names=c("healthy",
                 "dead")
 
 # For ozone damage percentage 
- my_cols2<-c("gold2", "chocolate1", "orangered", "red4", "darkorchid4")
+ my_cols2<-c("darkgreen", "gold2", "chocolate1", "orangered", "red4", "darkorchid4")
  
-desired_order_percentage<-c("less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
+desired_order_percentage<-c("0%","less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
 
 
 ```
@@ -420,21 +420,36 @@ theme_bw()
 
 p4_a <- p + geom_histogram(aes(x=tree_nodes, 
                       fill=tree_health_simplified))  +
-    labs(x="Number of nodes", y= "Number of trees") +
+    labs(x="Tree age (years)", y= "Number of trees") +
     theme(text = element_text(size = 20)) +
      theme(plot.title = element_text(lineheight=1.1, face="bold"))+
   ggtitle("a)")
+p4_a
 ```
 
 ## Plot 4b
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 ## base data
-p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
+# Definir plantas sanas y dañadas por otra cosa que no fuera ozono
+# cond_PO<- se  refiere a condition Percentage damage by Ozone 
+cond_PO<-as_data_frame(muestreo_tidy)
+# Asignar 0% de daño por ozono a los árboles healthy
+cond_PO$ozone_damage_percentage = ifelse(cond_PO$tree_health == "healthy", "0%", cond_PO$ozone_damage_percentage)
+
+# Filtrar por porcentaje de daño
+condition_PO<-cond_PO%>%
+  filter(ozone_damage_percentage == "0%" | ozone_damage_percentage == "less than 10%" | ozone_damage_percentage == "10 to 40%" | ozone_damage_percentage == "40 to 50%"| ozone_damage_percentage == "50 to 70%" | ozone_damage_percentage == "more than 70%")
+
+condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_percentage)
+
+
+# Plot
+p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
             ggplot() +
             scale_fill_manual(values= my_cols2, 
                               breaks = desired_order_percentage,
-                              labels = c("less 10%", "10 to 40%", "40 to 50%",
+                              labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
                                          "50 to 70%", "more 70%"),
                               name= "Ozone damage\n per tree") +
             theme_bw() + theme(text = element_text(size = 20)) 
@@ -442,10 +457,12 @@ p_od<- muestreo_tidy %>% filter(!is.na(ozone_damage_percentage)) %>%
 p4_b <- p_od +
   geom_bar(aes(x=tree_nodes,
                fill=ozone_damage_percentage)) +
-  labs(x="Number of nodes", y= "Number of trees") +
+  labs(x="Tree age (years)", y= "Number of trees") +
   theme(legend.title.align = 0.5)+
   theme(plot.title = element_text(lineheight=1.1, face="bold"))+
   ggtitle("b)")
+
+p4_b
 ```
 
 ## Plot 4c
@@ -475,7 +492,7 @@ p4_c<-condition_HOO%>%
   ggtitle("c)")+
   theme(text = element_text(size = 20), axis.text.x=element_blank())+
   theme(plot.title = element_text(lineheight=1.1, face="bold"))
-
+p4_c
 # Statistics
 group_by(condition_HOO, tree_health_simplified) %>%
   summarise(
@@ -517,17 +534,12 @@ pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_
 ## Plot 4d
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
-# Filtrar por porcentaje de daño
-condition_PO<-muestreo_tidy%>%
-  filter(ozone_damage_percentage == "less than 10%" | ozone_damage_percentage == "10 to 40%" | ozone_damage_percentage == "40 to 50%"| ozone_damage_percentage == "50 to 70%" | ozone_damage_percentage == "more than 70%")
-
-condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_percentage)
 
 # Plot
-p4_d<-condition_PO%>%
+p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>%
    ggplot(aes(y= tree_nodes, x= ozone_damage_percentage))+
           geom_boxplot(color="grey", notch = F)+
-        scale_color_manual(values=  my_cols2,labels = c("less 10%", "10 to 40%", "40 to 50%",
+        scale_color_manual(values=  my_cols2,labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
                                          "50 to 70%", "more 70%"))+
         geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5, size= 2.5)+
         xlab("")+ ylab("Tree age (years)")+
@@ -537,7 +549,7 @@ p4_d<-condition_PO%>%
   theme(legend.title.align = 0.5)+
   theme(text = element_text(size = 20), axis.text.x=element_blank())+
   theme(plot.title = element_text(lineheight=1.1, face="bold"))
-
+p4_d
 # Pruebas estadisticas
 # ANOVA
 a <- aov(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO)
@@ -662,3 +674,14 @@ p +
   theme(text = element_text(size = 20))
 
 ```
+# Figura S4
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+
+```
+
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+```
+
