@@ -299,52 +299,36 @@ multiplot(p_a, p_c, p_b, p_d, cols=2)
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
-# Select tree reforested data 
-cont_tabl_R<- select(muestreo_tidy, tree_health_simplified, reforested)
-
-cont_tabl_R<-cont_tabl_R%>%
+# Select tree reforested and covered data 
+cont_tab<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
   filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")
 
-# Healthy
-HRy<-cont_tabl_R%>%
-  filter(tree_health_simplified == "healthy"  & reforested == "yes")
-HRn<-cont_tabl_R%>%
-  filter(tree_health_simplified == "healthy"  & reforested == "no" )
+table(cont_tab)
+```
 
-# Ozone
-ORy<-cont_tabl_R%>%
-  filter(tree_health_simplified == "ozone"  & reforested == "yes" )
-ORn<-cont_tabl_R%>%
-  filter(tree_health_simplified == "ozone"  & reforested == "no" )
+```{r, fig.height=6, fig.width=6, message=FALSE}
+tab_reforested<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "yes")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "yes")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "yes")),
+               sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "no")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "no")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "no"))),
+             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("yes","no"))))
 
-# Ozone y others
-OoRy<-cont_tabl_R%>%
-  filter(tree_health_simplified == "ozone_and_other"  & reforested == "yes" )
-OoRn<-cont_tabl_R%>%
-  filter(tree_health_simplified == "ozone_and_other"  & reforested == "no" )
+# Pass data matrix to chisq.posthoc.test function
+names(attributes(tab_reforested)$dimnames) <- c("healthy status", "reforested")
 
-# Make table
-reforested<- as.table(rbind(c(nrow(HRy),nrow(ORy),nrow(OoRy)),c(nrow(HRn),nrow(ORn),nrow(OoRn))))
-
-# Named
-dimnames(reforested) <- list("reforested" = c("yes", "no"), "health status" = c("healthy","ozone","ozone and other"))# Pass data matrix to chisq.posthoc.test function
-
-reforested
-
-# Baeplot
-p_3a<-ggplot(cont_tabl_R, aes(reforested, ..count..)) +
+# Barplot
+p_3a<-ggplot(cont_tab, aes(reforested, ..count..)) +
   geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_fill_manual(name ="Health status", 
-                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+
-  ggtitle("a)")+
-  theme(legend.title.align = 0.5)+
-  theme(text = element_text(size = 20))+
+  scale_fill_manual(name ="Health status", values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"),
+                    labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ ggtitle("a)")+ theme(legend.title.align = 0.5)+ theme(text = element_text(size = 20))+
   theme(plot.title = element_text(lineheight=1.1, face="bold"))+
   labs(y="Number of trees", x= "Reforested")
   
 # Mosaic Plot with vcd library
-p_3b<-mosaic(reforested, shade=TRUE, legend=TRUE,
+p_3b<-mosaic(tab_reforested, shade=TRUE, legend=TRUE,
                 labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
 ```
 
@@ -352,51 +336,29 @@ p_3b<-mosaic(reforested, shade=TRUE, legend=TRUE,
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
-cont_tabl_C<- select(muestreo_tidy, tree_health_simplified, tree_exposition)
+tab_covered<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "healthy" & tree_exposition == "cover")),
+                sum(with(cont_tab, tree_health_simplified == "ozone" & tree_exposition == "cover")),
+                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
+                sum(with(cont_tab, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
+                sum(with(cont_tab, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
+                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
+             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("yes","no"))))
 
-cont_tabl_C<-cont_tabl_C%>%
-  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")
-
-
-# Healthy
-HCy<-cont_tabl_C%>%
-  filter(tree_health_simplified == "healthy"  & tree_exposition == "cover")
-HCn<-cont_tabl_C%>%
-  filter(tree_health_simplified == "healthy"  & tree_exposition == "exposed" )
-
-# Ozone
-OCy<-cont_tabl_C%>%
-  filter(tree_health_simplified == "ozone"  & tree_exposition == "cover" )
-OCn<-cont_tabl_C%>%
-  filter(tree_health_simplified == "ozone"  & tree_exposition == "exposed" )
-
-# Ozone y others
-OoCy<-cont_tabl_C%>%
-  filter(tree_health_simplified == "ozone_and_other"  & tree_exposition == "cover" )
-OoCn<-cont_tabl_C%>%
-  filter(tree_health_simplified == "ozone_and_other"  & tree_exposition == "exposed" )
-
-### Cargar datos
-covered<- as.table(rbind(c(nrow(HCy),nrow(OCy),nrow(OoCy)),
-                              c(nrow(HCn),nrow(OCn),nrow(OoCn))))
-dimnames(covered) <- list("covered" = c("yes", "no"), "health status" = c("healthy","ozone", "ozone and other"))# Pass data matrix to chisq.posthoc.test function
-
-covered
+# Pass data matrix to chisq.posthoc.test function
+names(attributes(tab_covered)$dimnames) <- c("healthy status", "covered")
 
 #Barplot
-p_3c<-ggplot(cont_tabl_C, aes(tree_exposition, ..count..)) +
+p_3c<-ggplot(cont_tab, aes(tree_exposition, ..count..)) +
   geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
   scale_fill_manual(name ="Health status", 
-                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+
-  ggtitle("c)")+
-  theme(legend.title.align = 0.5)+
-  theme(text = element_text(size = 20))+
+                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
+                    labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ ggtitle("c)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
   theme(plot.title = element_text(lineheight=1.1, face="bold"))+
   labs(y="Number of trees", x= "Tree exposition")
 
 # Mosaic Plot with vcd library
-p_3d <- mosaic(covered, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+p_3d <- mosaic(tab_covered, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
 
 ```
 
