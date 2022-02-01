@@ -583,7 +583,7 @@ p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>%
 p4_d
 # Pruebas estadisticas
 # ANOVA
-a <- aov(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO)
+a <- aov(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
 # Summary of the analysis
 summary(a)
 # rechazamos la hipótesis nula de que las medias son iguales, y decidimos que la media del numero de nodos es distinta entre las categorias.
@@ -596,13 +596,13 @@ shapiro.test(x = aov_residuals )
 
 # Procedo a hacer un kruskal
 # Debe tener homogeneidad. Si es mayor a 0.05 No hay evidencias en contra de la homogeneidad de varianzas. 
-leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO, center = "median")
+leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO, center = "median")
 
-kruskal.test(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_HOO)
+kruskal.test(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
 
 
 #poshoc que grupos difieren
-pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
+pairwise.wilcox.test(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
 ```
 
 
