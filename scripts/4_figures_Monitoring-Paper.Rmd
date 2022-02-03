@@ -498,7 +498,7 @@ p4_b
 
 ## Plot 4c
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
+```{r fig.height=6, fig.width=6, message=FALSE}
 
 # Filtrar por categoría de daño
 condition_HOO<-muestreo_tidy%>%
@@ -511,7 +511,39 @@ condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simp
 
 # Los datos tienen a graficar es el número de nodos para cada categoria de salud.
 # Los datos son continuos discretos, por lo tanto el analisis a seguir para buscar diferencias entre los grupos son:
-# Puedo representar los resultados en boxplot
+
+shapiro.test(condition_HOO$tree_nodes) #NO HAY NORMALIDAD 
+
+# Procedo a hacer una prueba no paramétrica (kruskal)
+
+# Debe tener Homocedasticidad: la varianza debe de ser constante entre todos los grupos.
+# If the p-value is less than our chosen significance level, we can reject the null hypothesis and conclude that we have enough evidence to state that the variance among the groups is not equal.
+leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO) #Opera con medias
+
+# As the p value obtained from the Shapiro-Wilk test and Levene’s test is significant (p < 0.05), we conclude that the data is not normally distributed and does not have equal variance. Kruskal-Wallis test is more appropriate for analyzing differences.
+
+kruskal.test(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO) #opera con mediana
+
+#As the p value obtained from the Kruskal-Wallis test test is significant , we conclude that there are significant differences.
+
+# For the Kruskal-Wallis test, epsilon-squared is a method of choice for effect size measurement. The epsilon-squared is 0.74 and suggests a very strong effect of plant varieties on yield
+
+# calculate effect size. Hay efecto relativamente fuerte
+library(rcompanion)
+epsilonSquared(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified)
+
+# https://peterstatistics.com/CrashCourse/3-TwoVarUnpair/NomOrd/NomOrd3c.html
+# To know which plant varieties are significantly different from each other, we will perform the Dunn’s test as post-hoc test for significant Kruskal-Wallis test. As there are multiple comparisons, we will correct the p values using Benjamini-Hochberg FDR method for multiple hypothesis testing at a 5% cut-off. The other tests that can be used for post-hoc test includes Conover and Nemenyi tests. Dunn’s test is more appropriate post-hoc than the Mann-Whitney U test for significant Kruskal-Wallis test as it retains the rank sums of the Kruskal-Wallis.
+
+#poshoc para saber que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified, p.adjust.method = "holm" )
+
+
+# Perorm pairwise comparisons
+library(ggpubr)
+my_comparisons <- list( c("healthy", "ozone"), c("healthy", "ozone_and_other"), c("ozone", "ozone_and_other") )
+
+
 p4_c<-condition_HOO%>%
    ggplot(aes(y= tree_nodes, x= tree_health_simplified))+
           geom_boxplot(color="grey", notch = F)+
@@ -522,52 +554,44 @@ p4_c<-condition_HOO%>%
   theme_bw()+
   ggtitle("c)")+
   theme(text = element_text(size = 20), axis.text.x=element_blank())+
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  stat_compare_means(comparisons = my_comparisons, label = "p.signif")
 p4_c
-# Statistics
-group_by(condition_HOO, tree_health_simplified) %>%
-  summarise(
-    count = n(),
-    mean = mean(tree_nodes, na.rm = TRUE),
-    sd = sd(tree_nodes, na.rm = TRUE)
-  )
 
-# Prueba de normalidad en anova
-
-# ANOVA
-a <- aov(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
-# Summary of the analysis
-summary(a)
-# rechazamos la hipótesis nula de que las medias son iguales, y decidimos que la media del numero de nodos es distinta entre las categorias.
-
-# Normalidad. No hay en valores menores a 0.05
-
-# Extract the residuals
-aov_residuals <- residuals(object = a )
-# Run Shapiro-Wilk test
-shapiro.test(x = aov_residuals )
-
-# Procedo a hacer un kruskal
-
-# Debe tener homogeneidad
-leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO, center = "median")
-
-kruskal.test(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO)
-
-#Prueba homogeneidad de varianzas y sí hay :(
-leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO, center = "median")
-
-#poshoc que grupos difieren
-pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified, p.adjust.method = "holm" )
 
 ```
 
 ## Plot 4d
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
+# Perorm pairwise comparisons
+# Run Shapiro-Wilk test
+shapiro.test(condition_PO$tree_nodes) #NO HAY NORMALIDAD
+
+# Procedo a hacer un kruskal
+# Debe tener homogeneidad. Si es mayor a 0.05 No hay evidencias en contra de la homogeneidad de varianzas. 
+leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO, center = "median")
+
+kruskal.test(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
+
+epsilonSquared(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage)
+
+
+#poshoc que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
+
+my_comparisons <- list(c("0%", "less than 10%"), c("0%", "10 to 40%"), c("0%", "40 to 50%"),
+                        c("0%", "50 to 70%"), c("0%", "more than 70%"), 
+                        c("less than 10%", "50 to 70%"),
+                        c("less than 10%", "10 to 40%"), c("less than 10%", "40 to 50%"),
+                        c("less than 10%", "50 to 70%"), c("less than 10%", "more than 70%"),
+                        c("10 to 40%", "40 to 50%"),c("10 to 40%", "50 to 70%"), 
+                        c("10 to 40%", "more than 70%"),
+                        c("40 to 50%", "50 to 70%"), c("40 to 50%", "more than 70%"),
+                        c("50 to 70%", "more than 70%"))
 
 # Plot
-p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>%
+p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>% 
    ggplot(aes(y= tree_nodes, x= ozone_damage_percentage))+
           geom_boxplot(color="grey", notch = F)+
         scale_color_manual(values=  my_cols2,labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
@@ -579,30 +603,10 @@ p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>%
   ggtitle("d)")+
   theme(legend.title.align = 0.5)+
   theme(text = element_text(size = 20), axis.text.x=element_blank())+
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  ggpubr::stat_compare_means(comparisons = my_comparisons, label="p.signif")
+
 p4_d
-# Pruebas estadisticas
-# ANOVA
-a <- aov(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
-# Summary of the analysis
-summary(a)
-# rechazamos la hipótesis nula de que las medias son iguales, y decidimos que la media del numero de nodos es distinta entre las categorias.
-
-# Normalidad. No hay en valores menores a 0.05
-# Extract the residuals
-aov_residuals <- residuals(object = a )
-# Run Shapiro-Wilk test
-shapiro.test(x = aov_residuals )
-
-# Procedo a hacer un kruskal
-# Debe tener homogeneidad. Si es mayor a 0.05 No hay evidencias en contra de la homogeneidad de varianzas. 
-leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO, center = "median")
-
-kruskal.test(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
-
-
-#poshoc que grupos difieren
-pairwise.wilcox.test(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
 ```
 
 
