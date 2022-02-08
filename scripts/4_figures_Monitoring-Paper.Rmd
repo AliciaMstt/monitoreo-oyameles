@@ -578,17 +578,17 @@ epsilonSquared(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_
 
 
 #poshoc que grupos difieren
+
+#order levels 
+condition_PO$ozone_damage_percentage<- ordered(condition_PO$ozone_damage_percentage, levels=c("0%","less than 10%", "10 to 40%", "40 to 50%", "50 to 70%","more than 70%"))
+
+#Prueba
 pairwise.wilcox.test(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
 
 my_comparisons <- list(c("0%", "less than 10%"), c("0%", "10 to 40%"), c("0%", "40 to 50%"),
-                        c("0%", "50 to 70%"), c("0%", "more than 70%"), 
-                        c("less than 10%", "50 to 70%"),
-                        c("less than 10%", "10 to 40%"), c("less than 10%", "40 to 50%"),
-                        c("less than 10%", "50 to 70%"), c("less than 10%", "more than 70%"),
-                        c("10 to 40%", "40 to 50%"),c("10 to 40%", "50 to 70%"), 
-                        c("10 to 40%", "more than 70%"),
-                        c("40 to 50%", "50 to 70%"), c("40 to 50%", "more than 70%"),
-                        c("50 to 70%", "more than 70%"))
+                        c("0%", "50 to 70%"), c("0%", "more than 70%"),
+                        c("less than 10%", "50 to 70%"), 
+                       c("10 to 40%", "50 to 70%"))
 
 # Plot
 p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>% 
