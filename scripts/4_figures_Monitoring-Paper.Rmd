@@ -46,6 +46,8 @@ Data analyzed here correspond only to the trees that were approved during the va
 
 ```{r}
 muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
+
+
 ```
 
 Color palettes:
@@ -675,7 +677,7 @@ p_satmap +geom_scatterpie(data=parcelas_tidy,
 # Figure S3
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
-# Create new variable with porcentage of ozonoe damage
+# Create new variable with porcentage of ozone damage
 parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
                      mutate(., 
                       total=sum(healthy,ozone,ozone_and_other,
@@ -721,3 +723,64 @@ p +
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 ```
 
+# RESULTS Participatory monitoring
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# No se incluye a M (37) y PP (6), ya que eran colectados por diferentes miembros del team
+trees<- c(135,133,130,174,150,139,165,166,133,137,125,105)
+rangers<- c("A","B","C","D","E","F","G","H", "I", "J", "K", "L")
+mean(trees)
+sd(trees)
+
+```
+
+# Damage percentage
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+# Create new variable with porcentage of ozone damage
+parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
+                     mutate(., 
+                      total=sum(healthy,ozone,ozone_and_other,
+                          drougth, acid_rain, other,
+                          others_combined, dead, fungi,
+                          # insect, 
+                          worm)) %>%
+                    mutate(perc.other= sum(healthy,
+                          drougth, acid_rain, other,
+                          others_combined, dead, fungi,worm)/total)
+
+status_HS<- c("healthy","ozone","ozone_and_other",
+                          "drougth", "acid_rain", "other",
+                          "others_combined", "dead", "fungi",
+                          "worm")
+count_HS<-c(sum(parcelas_tidy$healthy), sum(parcelas_tidy$ozone),
+            sum(parcelas_tidy$ozone_and_other),sum(parcelas_tidy$drougth),
+            sum(parcelas_tidy$acid_rain),sum(parcelas_tidy$other),
+            sum(parcelas_tidy$others_combined), sum(parcelas_tidy$dead),
+            sum(parcelas_tidy$fungi), sum(parcelas_tidy$worm))
+
+percentageH<-data.frame(status_HS, count_HS)
+
+(sum(c(parcelas_tidy$ozone, parcelas_tidy$ozone_and_other))*100)/sum(count_HS)
+
+(sum(parcelas_tidy$healthy)*100)/sum(count_HS)
+
+(sum(c(parcelas_tidy$drougth, parcelas_tidy$acid_rain , parcelas_tidy$other, parcelas_tidy$others_combined,parcelas_tidy$dead, parcelas_tidy$fungi, parcelas_tidy$worm))*100)/sum(count_HS)
+```
+
+# Percentage damage in plots
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+#Percentage damage plots
+
+PDP<-data.frame(parcelas_tidy$plot, parcelas_tidy$perc.ozone)
+
+PDP<-PDP[order(PDP$parcelas_tidy.plot),]
+range(PDP$parcelas_tidy.perc.ozone)
+head(PDP[order(PDP$parcelas_tidy.perc.ozone),])
+
+
+
+
+```
