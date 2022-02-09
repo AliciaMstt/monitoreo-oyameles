@@ -47,7 +47,7 @@ Data analyzed here correspond only to the trees that were approved during the va
 ```{r}
 muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
 
-
+# write.csv(muestreo_tidy,  file="../../../../Desktop/muestreo_tidy.csv")
 ```
 
 Color palettes:
@@ -266,6 +266,8 @@ p_c <- p_c + geom_point(data=parcelas_tidy,
                  size= 5) +
     theme(text = element_text(size = 20))+
   ggtitle("c)")
+p_c 
+
 ```
 
 ## Plot 2d: Distribution of tree health status by plot
@@ -608,6 +610,7 @@ p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>%
   theme(plot.title = element_text(lineheight=1.1, face="bold"))+
   ggpubr::stat_compare_means(comparisons = my_comparisons, label="p.signif")
 
+
 p4_d
 ```
 
@@ -656,7 +659,7 @@ Tree_height_plot
 
 # Figure S2
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
+```{r, fig.height=20, fig.width=20, message=FALSE}
 # plot pies in map
 p_satmap <-  ggmap(sat_map)
 p_satmap +geom_scatterpie(data=parcelas_tidy,
@@ -739,16 +742,6 @@ sd(trees)
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
 # Create new variable with porcentage of ozone damage
-parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
-                     mutate(., 
-                      total=sum(healthy,ozone,ozone_and_other,
-                          drougth, acid_rain, other,
-                          others_combined, dead, fungi,
-                          # insect, 
-                          worm)) %>%
-                    mutate(perc.other= sum(healthy,
-                          drougth, acid_rain, other,
-                          others_combined, dead, fungi,worm)/total)
 
 status_HS<- c("healthy","ozone","ozone_and_other",
                           "drougth", "acid_rain", "other",
