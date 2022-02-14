@@ -334,9 +334,13 @@ To be done.
 First make a summary of tree health from the sampling form:
 
 ```{r}
+#Make muestreo within validation aproved
+muestreo2<- filter(muestreo, X_validation_status == "validation_status_approved")
+
+
 #Make summary 
-plots_health <- group_by(muestreo, plot) %>%
-                         summarise(tree_health_simplified) %>%
+plots_health <- group_by(muestreo2, plot) %>% 
+  summarise(tree_health_simplified) %>%
   
 # Pivot wider 
               pivot_wider(., names_from = tree_health_simplified,
