@@ -1,0 +1,1099 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: "yeti"
+    df_print: paged
+  pdf_document: default
+---
+
+This document presents the subset of the figures used for paper about monitoring.
+
+## Data and packages
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggmap)
+library(scatterpie)
+library(rgdal)
+library(multcompView)
+library(car)
+library(ggpmisc)
+library(chisq.posthoc.test)
+library(vcd)
+```
+
+
+Sampling data correspond to the data collected with kobo and previously cleaned with the script `1_preprocesamiento_datos_kobo.Rmd`.
+
+```{r, message=FALSE}
+# load data
+muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
+parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
+
+# pivot long plots data to have health data as a single variable
+parcelas_long<-pivot_longer(parcelas_tidy, 
+                            cols = healthy:worm, 
+                            names_to = "tree_health_simplified",
+                            values_to = "n_trees")
+```
+
+Data analyzed here correspond only to the trees that were approved during the validation by manually reviewing the photographs in kobotoolbox. Total of `r nrow (muestreo_tidy)` trees sampled, `r sum (muestreo_tidy$X_validation_status=="validation_status_approved")` were approved in the validation.
+
+```{r}
+muestreo_tidy<- filter(muestreo_tidy, X_validation_status=="validation_status_approved")
+
+# write.csv(muestreo_tidy,  file="../../../../Desktop/muestreo_tidy.csv")
+```
+
+Color palettes:
+
+```{r, message=FALSE}
+# Make a nice color pallete and legend order for all plots
+
+my_cols=c("darkgreen", 
+              "darkred", 
+              "orangered1", 
+              "cadetblue", 
+              "tan", 
+              "beige", 
+            #  "burlywood4", 
+              "coral", 
+              "aquamarine3", 
+              "gray70", 
+              "black")
+
+desired_order=c("healthy", 
+                "ozone", 
+                "ozone_and_other", 
+                "others_combined", 
+                "drougth", 
+                "fungi", 
+             #   "insect", 
+                "worm", 
+                "acid_rain", 
+                "other", 
+                "dead")
+
+desired_names=c("healthy", 
+                "ozone", 
+                "ozone and other", 
+                "others combined", 
+                "drougth", 
+                "fungi", 
+             #   "insect", 
+                "worm", 
+                "acid rain", 
+                "other", 
+                "dead")
+
+spanish_labels=c("Sano", 
+                  "Ozono", 
+                  "Ozono y otros", 
+                  "Otros combinados no-ozono", 
+                  "Sequía", 
+                  "Hongos", 
+               #   "Insectos", 
+                  "Gusano de seda", 
+                  "Lluvia acida", 
+                  "Otro", 
+                  "Muerto")
+
+# For ozone damage percentage 
+ my_cols2<-c("darkgreen", "gold2", "chocolate1", "orangered", "red4", "darkorchid4")
+ 
+desired_order_percentage<-c("0%","less than 10%", "10 to 40%", "40 to 50%", "50 to 70%", "more than 70%")
+
+
+```
+
+Multiplot fun:
+
+```{r}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+Configure google api for maps:
+
+``` {r}
+# code adapted from https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-g0ogle-map.html
+
+## configure google api
+
+# You first need to register your api key in https://cloud.google.com/maps-platform/#get-started and follow instructions. The geocoding API is a free service, but you nevertheless need to associate a credit card with the account. Please note that the Google Maps API is not a free service. There is a free allowance of 40,000 calls to the geocoding API per month, and beyond that calls are $0.005 each.
+# after you obtain your api, save it in /scripts/api_key.api (not shown in this repo por obvious reasons).
+
+# if you get the following error when running get_map():
+
+#"Error in aperm.default(map, c(2, 1, 3)) : 
+#  invalid first argument, must be an array " 
+
+# check this troubleshooting: https://rgraphgallery.blogspot.com/2013/04/rg-plot-pie-over-google-map.html
+
+##  load and register api
+api <- readLines("api_key.api")
+register_google(key = api)
+```
+
+Map and monitoring figures presented in the paper:
+
+# Figure 2
+
+## Plot 2a: PNDL location on CDMX map
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# get cdmx shape
+CDMX<-readOGR(dsn="../data/spatial", layer="CDMX")
+CDMX<-fortify(CDMX)
+
+# get PNDL shape
+PNDL<-readOGR(dsn="../data/spatial", layer="Desierto_Leones_Geo_ITRF08")
+PNDL<-fortify(PNDL)
+
+# get background map
+sat_map = get_map(location = c(lon = -99.133549, lat = 19.3), zoom = 10, maptype = 'terrain-background', source = "google")
+
+## plot
+p_a<-ggmap(sat_map) + 
+            geom_polygon(data = CDMX,
+                         aes(x = long, y = lat, group = group),
+                         color="black", fill=NA, size=1.5) +
+            geom_polygon(data = PNDL,
+                         aes(x = long, y = lat, group = group),
+                         color="red", fill=NA, size=1.5) +
+            geom_point(aes(x=-98.95, y=19.6), 
+                       shape=0, stroke=2, size=5, color="black") +
+            geom_point(aes(x=-98.95, y=19.55), 
+                       shape=0, stroke=2, size=5, color="red") +
+            geom_text(aes(label="CDMX", x=-98.87, y=19.6), 
+                      color="Black", fontface="bold", size=5) +
+            geom_text(aes(label="PNDL", x=-98.87, y=19.55), 
+                      color="Black", fontface="bold", size=5) +
+            theme(text = element_text(size = 20))+
+  ggtitle("a)")
+```
+
+## Plot 2b: Satellite image and surroundings of the PNDL
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# get background map
+sat_map = get_map(location = c(lon = -99.30, lat = 19.31), zoom = 13, maptype = 'satellite', source = "google")
+
+## add towns names
+towns<-data.frame(nombre=c("San Bartolo Ameyalco", 
+                           "Santa Rosa Xochiac", 
+                           "San Mateo Tlaltenango"),
+                  long=c(-99.270, -99.29, -99.276),
+                  lat=c(19.333, 19.325, 19.346))
+
+
+
+## plot
+p_b<-ggmap(sat_map) + 
+            geom_polygon(data = PNDL,
+                         aes(x = long, y = lat, group = group),
+                         color="red", fill=NA, size=1.5) +
+            geom_point(data=towns, aes(x=long, y=lat), colour="red", size=1.5) +
+            geom_text(data=towns, aes(label=nombre, x=long, y=lat), 
+                      color="white", fontface="bold",
+                      size=5, nudge_y=0.003) +
+  # add Cruz de Coloxtitla (CX), and Convento (Cn) landmarks
+            geom_text(aes(label="X", x=-99.3014, y=19.286068), 
+                      color="white", fontface="bold", size=4) +
+            geom_text(aes(label="C", x=-99.31, y=19.3133), 
+                      color="white", fontface="bold", size=4) +
+            theme(text = element_text(size = 20))+
+  ggtitle("b)")
+```
+
+## Plot 2c: This is the distribution of the 48 plots:
+
+```{r, message=FALSE, fig.height=15, fig.width=15}
+
+## plot map
+# get map
+sat_map = get_map(location = c(lon = -99.3060, lat = 19.2909), zoom = 14, maptype = 'satellite', source = "google")
+
+# plot sampled plots
+p_c <-  ggmap(sat_map)
+p_c <- p_c + geom_point(data=parcelas_tidy,
+                      aes(x=X_coordinates_longitude,
+                          y=X_coordinates_latitude),
+                      color="red") +
+          geom_text(data=parcelas_tidy,
+                      aes(x=X_coordinates_longitude,
+                          y=X_coordinates_latitude,
+                          label=plot),
+                      color="white",
+                     check_overlap = TRUE,
+                      hjust = 0, vjust=1, nudge_x = 0.0005,
+                 size= 5) +
+    theme(text = element_text(size = 20))+
+  ggtitle("c)")
+p_c 
+
+```
+
+## Plot 2d: Distribution of tree health status by plot
+
+The following figure shows the total number of trees sampled in each 10x10 m plot, and how many of these are under some category of damage:
+
+```{r, message=FALSE, fig.height=9, fig.width=11}
+p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_names,
+                    name= "Health status") 
+  
+
+p_d <- p_d + theme_bw() +
+  labs(x="Plots", y= "Number of trees") +
+  theme(text = element_text(size = 20)) +
+  ggtitle("d)")
+
+```
+
+
+## Multiplot
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+multiplot(p_a, p_c, p_b, p_d, cols=2)
+```
+
+# Figure 3
+
+## Figure 3a y b Reforested
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+# Select tree reforested and covered data 
+cont_tab<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")
+
+table(cont_tab)
+```
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+tab_reforested<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "yes")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "yes")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "yes")),
+               sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "no")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "no")),
+                              sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "no"))),
+             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("yes","no"))))
+
+colnames(tab_reforested)<- c("reforested","naturally regeneration")
+
+
+names(attributes(tab_reforested)$dimnames) <- c("Health status", "Origin")
+
+# Barplot
+p_3a<-ggplot(cont_tab, aes(reforested, ..count..) ) +
+  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
+   scale_x_discrete(breaks = c("no", "yes"),
+                   labels = c("Naturally \n regeneration", "Reforested"))+
+  scale_fill_manual(name ="Health status", values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"),
+                    labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ ggtitle("a)")+ theme(legend.title.align = 0.5)+ theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1))+
+  labs(y="Number of trees", x= "Origin")
+  
+# Mosaic Plot with vcd library
+p_3b<-mosaic(tab_reforested, shade=TRUE, legend=TRUE,
+                labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+# Chi2
+chisq <- chisq.test(tab_reforested)
+chisq
+
+# Observed counts
+chisq$observed
+
+# Expected counts
+round(chisq$expected,2)
+
+# Pearson residuals (residuos estandarizados)
+round(chisq$residuals, 3)
+
+# Visuaalize Pearson residuals
+library(corrplot)
+corrplot(chisq$residuals, is.cor = FALSE)
+
+# Contibution in percentage (%)
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+
+# Visualize the contribution
+corrplot(contrib, is.cor = FALSE)
+
+```
+
+## Figure 3c y d Covered
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+tab_covered<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "healthy" & tree_exposition == "cover")),
+                sum(with(cont_tab, tree_health_simplified == "ozone" & tree_exposition == "cover")),
+                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
+                sum(with(cont_tab, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
+                sum(with(cont_tab, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
+                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
+             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
+
+colnames(tab_covered)<- c("nursed","exposed")
+names(attributes(tab_covered)$dimnames) <- c("Health status", "Tree exposition")
+```
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+#Barplot
+p_3c<-ggplot(cont_tab, aes(tree_exposition, ..count..)) +
+  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
+  scale_x_discrete(breaks = c("cover", "exposed"),
+                   labels = c("Nursed", "Exposed"))+
+  scale_fill_manual(name ="Health status", 
+                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
+                    labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ 
+  ggtitle("c)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
+  labs(y="Number of trees", x= "Tree exposition")
+  
+
+# Mosaic Plot with vcd library
+p_3d <- mosaic(tab_covered, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+
+# Chi2
+chisq <- chisq.test(tab_covered)
+chisq
+
+# Observed counts
+chisq$observed
+
+# Expected counts
+round(chisq$expected,2)
+
+# Pearson residuals (residuos estandarizados)
+round(chisq$residuals, 3)
+
+# Visuaalize Pearson residuals
+corrplot(chisq$residuals, is.cor = FALSE)
+
+# Contibution in percentage (%)
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+
+# Visualize the contribution
+library(corrplot)
+corrplot(contrib, is.cor = FALSE)
+
+```
+
+## Multiplot
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+multiplot(p_3a, p_3c, p_3b, p_3d, cols=2)
+```
+
+# Figure 4
+
+## Plot 4a
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
+     ggplot(.) +
+     scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_names,
+                    name= "Health status") +
+theme_bw()
+
+p4_a <- p + geom_histogram(aes(x=tree_nodes, 
+                      fill=tree_health_simplified))  +
+    labs(x="Tree age (years)", y= "Number of trees") +
+    theme(text = element_text(size = 20)) +
+     theme(plot.title = element_text(lineheight=1.1))+
+  ggtitle("a)")
+p4_a
+```
+
+## Plot 4b
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+## base data
+# Definir plantas sanas y dañadas por otra cosa que no fuera ozono
+# cond_PO<- se  refiere a condition Percentage damage by Ozone 
+cond_PO<-as_data_frame(muestreo_tidy)
+# Asignar 0% de daño por ozono a los árboles healthy
+cond_PO$ozone_damage_percentage = ifelse(cond_PO$tree_health == "healthy", "0%", cond_PO$ozone_damage_percentage)
+
+# Filtrar por porcentaje de daño
+condition_PO<-cond_PO%>%
+  filter(ozone_damage_percentage == "0%" | ozone_damage_percentage == "less than 10%" | ozone_damage_percentage == "10 to 40%" | ozone_damage_percentage == "40 to 50%"| ozone_damage_percentage == "50 to 70%" | ozone_damage_percentage == "more than 70%")
+
+condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_percentage)
+
+
+# Plot
+p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
+            ggplot() +
+            scale_fill_manual(values= my_cols2, 
+                              breaks = desired_order_percentage,
+                              labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
+                                         "50 to 70%", "more 70%"),
+                              name= "Ozone damage\n per tree") +
+            theme_bw() + theme(text = element_text(size = 20)) 
+
+p4_b <- p_od +
+  geom_bar(aes(x=tree_nodes,
+               fill=ozone_damage_percentage)) +
+  labs(x="Tree age (years)", y= "Number of trees") +
+  theme(legend.title.align = 0.5)+
+  theme(plot.title = element_text(lineheight=1.1))+
+  ggtitle("b)")
+
+p4_b
+```
+
+## Plot 4c
+
+```{r fig.height=6, fig.width=6, message=FALSE}
+
+# Filtrar por categoría de daño
+condition_HOO<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" )
+
+condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
+
+
+# Data distribution
+
+# Los datos tienen a graficar es el número de nodos para cada categoria de salud.
+# Los datos son continuos discretos, por lo tanto el analisis a seguir para buscar diferencias entre los grupos son:
+
+shapiro.test(condition_HOO$tree_nodes) #NO HAY NORMALIDAD 
+
+# Procedo a hacer una prueba no paramétrica (kruskal)
+
+# Debe tener Homocedasticidad: la varianza debe de ser constante entre todos los grupos.
+# If the p-value is less than our chosen significance level, we can reject the null hypothesis and conclude that we have enough evidence to state that the variance among the groups is not equal.
+leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO) #Opera con medias
+
+# As the p value obtained from the Shapiro-Wilk test and Levene’s test is significant (p < 0.05), we conclude that the data is not normally distributed and does not have equal variance. Kruskal-Wallis test is more appropriate for analyzing differences.
+
+kruskal.test(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO) #opera con mediana
+
+#As the p value obtained from the Kruskal-Wallis test test is significant , we conclude that there are significant differences.
+
+# For the Kruskal-Wallis test, epsilon-squared is a method of choice for effect size measurement. The epsilon-squared is 0.74 and suggests a very strong effect of plant varieties on yield
+
+# calculate effect size. Hay efecto relativamente fuerte
+library(rcompanion)
+epsilonSquared(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified)
+
+# https://peterstatistics.com/CrashCourse/3-TwoVarUnpair/NomOrd/NomOrd3c.html
+# To know which plant varieties are significantly different from each other, we will perform the Dunn’s test as post-hoc test for significant Kruskal-Wallis test. As there are multiple comparisons, we will correct the p values using Benjamini-Hochberg FDR method for multiple hypothesis testing at a 5% cut-off. The other tests that can be used for post-hoc test includes Conover and Nemenyi tests. Dunn’s test is more appropriate post-hoc than the Mann-Whitney U test for significant Kruskal-Wallis test as it retains the rank sums of the Kruskal-Wallis.
+
+#poshoc para saber que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified, p.adjust.method = "holm" )
+
+
+# Perorm pairwise comparisons
+library(ggpubr)
+my_comparisons <- list( c("healthy", "ozone"), c("healthy", "ozone_and_other"), c("ozone", "ozone_and_other") )
+
+
+p4_c<-condition_HOO%>%
+   ggplot(aes(y= tree_nodes, x= tree_health_simplified))+
+        scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "")+
+        geom_point(position="jitter",aes(color = tree_health_simplified), alpha=0.5, size= 2.5)+
+  geom_boxplot(color="black", notch = F, alpha = 0.1)+
+        xlab("Health status")+ ylab("Tree age (years)")+
+  theme_bw()+
+  ggtitle("c)")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  stat_compare_means(comparisons = my_comparisons, label = "p.signif")
+p4_c
+
+
+```
+
+## Plot 4d
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# Perorm pairwise comparisons
+# Run Shapiro-Wilk test
+shapiro.test(condition_PO$tree_nodes) #NO HAY NORMALIDAD
+
+# Procedo a hacer un kruskal
+# Debe tener homogeneidad. Si es mayor a 0.05 No hay evidencias en contra de la homogeneidad de varianzas. 
+leveneTest(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO, center = "median")
+
+kruskal.test(sqrt(tree_nodes) ~ ozone_damage_percentage, data = condition_PO)
+
+epsilonSquared(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage)
+
+
+#poshoc que grupos difieren
+
+#order levels 
+condition_PO$ozone_damage_percentage<- ordered(condition_PO$ozone_damage_percentage, levels=c("0%","less than 10%", "10 to 40%", "40 to 50%", "50 to 70%","more than 70%"))
+
+#Prueba
+pairwise.wilcox.test(x = sqrt(condition_PO$tree_nodes), g = condition_PO$ozone_damage_percentage, p.adjust.method = "bonferroni" )
+
+my_comparisons <- list(c("0%", "less than 10%"), c("0%", "10 to 40%"), c("0%", "40 to 50%"),
+                        c("0%", "50 to 70%"), c("0%", "more than 70%"),
+                        c("less than 10%", "50 to 70%"), 
+                       c("10 to 40%", "50 to 70%"))
+
+# Plot
+p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>% 
+   ggplot(aes(y= tree_nodes, x= ozone_damage_percentage))+
+        scale_color_manual(values=  my_cols2,labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
+                                         "50 to 70%", "more 70%"))+
+        geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5, size= 2.5)+
+        xlab("Ozone damage per tree")+ ylab("Tree age (years)")+
+  labs(color = "")+
+          geom_boxplot(color="black", notch = F, alpha = 0.1)+
+  theme_bw()+
+  ggtitle("d)")+
+  theme(legend.title.align = 0.5)+
+  theme(text = element_text(size = 20), axis.text.x=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  ggpubr::stat_compare_means(comparisons = my_comparisons, label="p.signif")
+
+
+p4_d
+```
+
+
+## Multiplot
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
+```
+
+# Figure 5
+
+# Modelos de acuerdo a Altura 
+
+## Modelo 1 lm(log10(tree_heigth) ~ tree_nodes, data = condition_HOO)
+
+```{r modelo 1, echo= TRUE}
+
+# Modelo 1 - Solo edad afecta crecimiento
+glm1<-glm(log10(tree_heigth) ~ tree_nodes, data = condition_HOO)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm1$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm1$residuals), glm1$fitted.values) # Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm1)
+summary(glm1)
+```
+
+## Modelo 2 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified, data = condition_HOO)
+
+```{r modelo 2, echo= TRUE}
+# Modelo 2  - Edad y salud afectan crecimiento
+glm2<-lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified, data = condition_HOO)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm2$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm2$residuals), glm2$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm2)
+summary(glm2)
+```
+
+## Modelo 3 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + tree_exposition , data = condition_HOO)
+
+```{r modelo 3, echo= TRUE}
+# Modelo 3  - Edad, salud y estructura espacial afectan crecimiento
+glm3<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified+tree_exposition, data = condition_HOO)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm3$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm3)
+summary(glm3)
+```
+
+## Modelo 4 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested, data = condition_HOO)
+
+```{r modelo 4, echo= TRUE}
+# Modelo 4  - Edad, salud y estructura espacial afectan crecimiento
+glm4<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested, data = condition_HOO)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm4$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm4$residuals), glm4$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm4)
+summary(glm4)
+```
+
+## Modelo 5 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested + tree_exposition, data = condition_HOO)
+
+```{r modelo 5, echo= TRUE}
+# Modelo 5  - Edad, salud y estructura espacial afectan crecimiento
+glm5<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested + tree_exposition, data = condition_HOO)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm5$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm5$residuals), glm5$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm5)
+summary(glm5)
+```
+
+
+
+# Comparar modelos
+
+```{r Comparar modelos, echo= TRUE}
+AIC(glm1,glm2, glm3, glm4, glm5)
+```
+
+```{r, height=6, fig.width=10, message=FALSE}
+# Filtrar por categoría de daño
+summary(glm3)
+
+#calculate McFadden's R-squared for model
+with(summary(glm3), 1 - deviance/null.deviance)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+
+cor.test(abs(glm3$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm3)
+
+
+# Graficar modelo 3
+Tree_height_plot<-ggplot(condition_HOO, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
+  labs( y = "log(Tree higth)", x = "Tree age (years)", color = "Health status")+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  theme_bw()
+
+Tree_height_plot
+
+```
+
+```{r, height=6, fig.width=10, message=FALSE}
+# Filtrar por categoría de daño
+summary(glm5)
+#calculate McFadden's R-squared for model
+with(summary(glm5), 1 - deviance/null.deviance)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm5$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+
+cor.test(abs(glm5$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm5)
+
+
+# Graficar modelo 3
+Tree_height_plot<-ggplot(condition_HOO, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
+  labs( y = "log(Tree higth)", x = "Tree age (years)", color = "Health status")+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  theme_bw()
+
+Tree_height_plot
+#a<-glm(condition_HOO$tree_height ~ condition_HOO$tree_nodes)
+#summary(glm3)
+```
+
+# Figure S2
+
+```{r, height=20, fig.width=20, message=FALSE}
+# plot pies in map
+p_satmap <-  ggmap(sat_map)
+p_satmap +geom_scatterpie(data=parcelas_tidy,
+                aes(x=X_coordinates_longitude,
+                    y=X_coordinates_latitude,
+                    group=plot),
+                pie_scale = 1.5,
+                cols=desired_order,
+                color=NA,
+                alpha=1)  +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_names,
+                    name= "Health status") +
+  theme(text = element_text(size = 20))
+
+```
+
+# Figure S3
+
+```{r, height=6, fig.width=6, message=FALSE}
+# Create new variable with percentage of ozone damage
+parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
+                     mutate(., 
+                      total=sum(healthy,ozone,ozone_and_other,
+                          drougth, acid_rain, other,
+                          others_combined, dead, fungi,
+                          # insect, 
+                          worm)) %>%
+                    mutate(perc.ozone= sum(ozone, ozone_and_other)/total)
+
+#Statistical
+leveneTest( parcelas_tidy$X_coordinates_altitude, parcelas_tidy$perc.ozone)
+
+
+#plot
+p <- ggplot(parcelas_tidy) +
+     geom_point(aes(x=X_coordinates_altitude,
+             y=perc.ozone))
+
+
+p<- ggplot(parcelas_tidy, aes(X_coordinates_altitude, perc.ozone ))+
+  geom_point(color= "grey50", size = 3, alpha = 0.6)
+
+p<-p + 
+  stat_smooth(color = "skyblue", formula = y ~ x,fill = "skyblue", method = "lm") +
+  stat_poly_eq(
+    aes(label = paste(..eq.label.., ..adj.rr.label.., sep = '~~~~')),
+    formula = y ~ x,  parse = TRUE,
+      size = 5, # Tamaño de fuente de la fórmula
+             label.x = 0.1, #location, la proporción entre 0-1
+      label.y = 0.95)+
+  labs(x="Plot altitude", y= "Percentage of ozone damaged trees within a plot")+
+  theme_bw() +
+   theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+  theme(text = element_text(size = 20), 
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        axis.text=element_text(size=9))
+
+p
+ggsave("../outputs/FigS3.png",
+       dpi = 600)
+
+```
+
+
+```{r, height=6, fig.width=6, message=FALSE}
+
+parcelas_tidy_46<-parcelas_tidy %>% 
+  filter( X_coordinates_altitude>2800)
+
+
+# Create new variable with percentage of ozone damage
+parcelas_tidy_46<-parcelas_tidy_46 %>% rowwise() %>% 
+                     mutate(., 
+                      total=sum(healthy,ozone,ozone_and_other,
+                          drougth, acid_rain, other,
+                          others_combined, dead, fungi,
+                          # insect, 
+                          worm)) %>%
+                    mutate(perc.ozone= sum(ozone, ozone_and_other)/total)
+
+#Statistical
+leveneTest( parcelas_tidy_46$X_coordinates_altitude, parcelas_tidy_46$perc.ozone)
+
+#plot
+p <- ggplot(parcelas_tidy_46) +
+     geom_point(aes(x=X_coordinates_altitude,
+             y=perc.ozone))
+
+p<- ggplot(parcelas_tidy_46, aes(X_coordinates_altitude, perc.ozone ))+
+  geom_point(color= "grey50", size = 3, alpha = 0.6)
+
+p<-p + 
+  stat_smooth(color = "skyblue", formula = y ~ x,fill = "skyblue", method = "lm") +
+  stat_poly_eq(
+    aes(label = paste(..eq.label.., ..adj.rr.label.., sep = '~~~~')),
+    formula = y ~ x,  parse = TRUE,
+      size = 5, # Tamaño de fuente de la fórmula
+             label.x = 0.1, #location, la proporción entre 0-1
+      label.y = 0.95)+
+  labs(x="Plot altitude", y= "Percentage of ozone damaged trees within a plot")+
+  theme_bw() +
+   theme(plot.title = element_text(lineheight=1.1, face="bold")) +
+    theme(text = element_text(size = 20), 
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        axis.text=element_text(size=9))
+p
+ggsave("../outputs/FigS3_sup.png",
+       dpi = 600)
+
+
+```
+
+
+
+# RESULTS Participatory monitoring
+
+```{r, height=6, fig.width=6, message=FALSE}
+# No se incluye a M (37) y PP (6), ya que eran colectados por diferentes miembros del team
+trees<- c(135,133,130,174,150,139,165,166,133,137,125,105)
+rangers<- c("A","B","C","D","E","F","G","H", "I", "J", "K", "L")
+mean(trees)
+sd(trees)
+
+```
+
+# Damage percentage
+
+```{r, height=6, fig.width=6, message=FALSE}
+
+# Create new variable with porcentage of ozone damage
+
+status_HS<- c("healthy","ozone","ozone_and_other",
+                          "drougth", "acid_rain", "other",
+                          "others_combined", "dead", "fungi",
+                          "worm")
+count_HS<-c(sum(parcelas_tidy$healthy), sum(parcelas_tidy$ozone),
+            sum(parcelas_tidy$ozone_and_other),sum(parcelas_tidy$drougth),
+            sum(parcelas_tidy$acid_rain),sum(parcelas_tidy$other),
+            sum(parcelas_tidy$others_combined), sum(parcelas_tidy$dead),
+            sum(parcelas_tidy$fungi), sum(parcelas_tidy$worm))
+
+percentageH<-data.frame(status_HS, count_HS)
+
+(sum(c(parcelas_tidy$ozone, parcelas_tidy$ozone_and_other))*100)/sum(count_HS)
+
+(sum(parcelas_tidy$healthy)*100)/sum(count_HS)
+
+(sum(c(parcelas_tidy$drougth, parcelas_tidy$acid_rain , parcelas_tidy$other, parcelas_tidy$others_combined,parcelas_tidy$dead, parcelas_tidy$fungi, parcelas_tidy$worm))*100)/sum(count_HS)
+```
+
+# Percentage damage in plots
+
+```{r, height=6, fig.width=6, message=FALSE}
+#Percentage damage plots
+
+PDP<-data.frame(parcelas_tidy$plot, parcelas_tidy$perc.ozone)
+
+PDP<-PDP[order(PDP$parcelas_tidy.plot),]
+range(PDP$parcelas_tidy.perc.ozone)
+head(PDP[order(PDP$parcelas_tidy.perc.ozone),])
+
+
+
+
+```
+
+```{r height=6, fig.width=6, message=FALSE}
+
+# Filtrar por categoría de daño
+condition_HOz<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone")
+
+condition_HOz$tree_health_simplified <- as.factor(condition_HOz$tree_health_simplified)
+```
+
+
+# Figure 5 without ozone + others
+
+# Modelos de acuerdo a Altura 
+
+## Modelo 1 lm(log10(tree_heigth) ~ tree_nodes, data = condition_HOO)
+
+```{r modelo 1 without ozone + others, echo= TRUE}
+
+# Modelo 1 - Solo edad afecta crecimiento
+glm1<-glm(log10(tree_heigth) ~ tree_nodes, data = condition_HOz)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm1$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm1$residuals), glm1$fitted.values) # Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm1)
+summary(glm1)
+```
+
+## Modelo 2 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified, data = condition_HOO)
+
+```{r modelo 2 without ozone + others, echo= TRUE}
+# Modelo 2  - Edad y salud afectan crecimiento
+glm2<-lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified, data = condition_HOz)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm2$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm2$residuals), glm2$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm2)
+summary(glm2)
+```
+
+## Modelo 3 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + tree_exposition , data = condition_HOO)
+
+```{r modelo 3 without ozone + others, echo= TRUE}
+# Modelo 3  - Edad, salud y estructura espacial afectan crecimiento
+glm3<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified+tree_exposition, data = condition_HOz)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm3$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm3)
+summary(glm3)
+```
+
+## Modelo 4 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested, data = condition_HOO)
+
+```{r modelo 4 without ozone + others, echo= TRUE}
+# Modelo 4  - Edad, salud y estructura espacial afectan crecimiento
+glm4<-lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested, data = condition_HOz)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm4$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm4$residuals), glm4$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm4)
+summary(glm4)
+```
+
+## Modelo 5 lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested + tree_exposition, data = condition_HOO)
+
+```{r modelo 5 without ozone + others, echo= TRUE}
+# Modelo 5  - Edad, salud y estructura espacial afectan crecimiento
+glm5<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested + tree_exposition, data = condition_HOz)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm5$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+cor.test(abs(glm5$residuals), glm5$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm5)
+summary(glm5)
+```
+
+
+
+# Comparar modelos
+
+```{r Comparar modelos without ozone + others, echo= TRUE}
+AIC(glm1,glm2, glm3, glm4, glm5)
+```
+
+```{r, height=6, fig.width=10, message=FALSE}
+glm4<-lm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + reforested, data = condition_HOz)
+
+# Filtrar por categoría de daño
+summary(glm4)
+
+#calculate McFadden's R-squared for model
+#with(summary(glm4), 1 - deviance/null.deviance)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm4$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+
+cor.test(abs(glm4$residuals), glm4$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm4)
+
+# Graficar modelo 4
+Tree_height_plot<-ggplot(condition_HOz, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
+  labs( y = "log(Tree higth)", x = "Tree age (years)", color = "Health status")+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  theme_bw()
+
+Tree_height_plot
+```
+
+```{r, height=6, fig.width=10, message=FALSE}
+# Filtrar por categoría de daño
+summary(glm5)
+#calculate McFadden's R-squared for model
+with(summary(glm5), 1 - deviance/null.deviance)
+
+# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
+shapiro.test(glm5$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
+
+cor.test(abs(glm5$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
+
+par(mfrow =c(2,2))
+plot(glm5)
+
+
+# Graficar modelo 4
+Tree_height_plot<-ggplot(condition_HOz, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
+  labs( y = "log(Tree higth)", x = "Tree age (years)", color = "Health status")+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+
+  theme(text = element_text(size = 20), axis.text.x=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  theme_bw()
+
+Tree_height_plot
+#a<-glm(condition_HOO$tree_height ~ condition_HOO$tree_nodes)
+#summary(glm3)
+```
+
+
+
