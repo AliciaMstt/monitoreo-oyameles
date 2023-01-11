@@ -8,12 +8,12 @@ output:
     df_print: paged
   pdf_document: default
 ---
-
 This document presents the subset of the figures used for paper about monitoring.
 
-## Data and packages
+## Load packages
 
-```{r, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
+library(MASS)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -25,17 +25,19 @@ library(car)
 library(ggpmisc)
 library(chisq.posthoc.test)
 library(vcd)
+library(grid)
 ```
 
-
 Sampling data correspond to the data collected with kobo and previously cleaned with the script `1_preprocesamiento_datos_kobo.Rmd`.
+
+## Load data
 
 ```{r, message=FALSE}
 # load data
 muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
 parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
 
-# pivot long parcelas data to have health data as a single variable
+# pivot long plots data to have health data as a single variable
 parcelas_long<-pivot_longer(parcelas_tidy, 
                             cols = healthy:worm, 
                             names_to = "tree_health_simplified",
@@ -90,6 +92,18 @@ desired_names=c("healthy",
                 "acid rain", 
                 "other", 
                 "dead")
+
+spanish_labels=c("Sano", 
+                  "Ozono", 
+                  "Ozono y otros", 
+                  "Otros combinados no-ozono", 
+                  "Sequía", 
+                  "Hongos", 
+               #   "Insectos", 
+                  "Gusano de seda", 
+                  "Lluvia acida", 
+                  "Otro", 
+                  "Muerto")
 
 # For ozone damage percentage 
  my_cols2<-c("darkgreen", "gold2", "chocolate1", "orangered", "red4", "darkorchid4")
@@ -270,12 +284,22 @@ p_c
 
 ```
 
+
 ## Plot 2d: Distribution of tree health status by plot
 
 The following figure shows the total number of trees sampled in each 10x10 m plot, and how many of these are under some category of damage:
 
 ```{r, message=FALSE, fig.height=9, fig.width=11}
-p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
+
+parcelas_HOO<-parcelas_long%>%
+  filter(tree_health_simplified ==  "ozone" )
+  sum(parcelas_HOO$n_trees)
+
+parcelas_HOO<-parcelas_long%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" )
+
+
+p_d <- ggplot(parcelas_HOO, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
   geom_bar(stat="identity") +
   scale_fill_manual(values= my_cols, breaks = desired_order,
                     labels= desired_names,
@@ -285,78 +309,72 @@ p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplif
 p_d <- p_d + theme_bw() +
   labs(x="Plots", y= "Number of trees") +
   theme(text = element_text(size = 20)) +
-  ggtitle("d)")
+  ggtitle("d)")+
+  coord_flip()
 
 ```
 
-
-## Multiplot
+# Multiplot Fig 2
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p_a, p_c, p_b, p_d, cols=2)
+
+fig_2<-multiplot(p_a, p_c, p_b, p_d, cols=2)
+fig_2
+ggsave("../outputs/Fig_2.png",
+       dpi = 600)
 ```
 
 # Figure 3
-
-el estado de salud del aárbol es independiente de su condición de reforestación
-H:árbolres dañados por ozono dependen de si fueron reforestados
 
 ## Figure 3a y b Reforested
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
 # Select tree reforested and covered data 
-cont_tab<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+cont_tab<- dplyr::select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
   filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")
 
 table(cont_tab)
-```
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
-tab_reforested<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "yes")),
-                              sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "yes")),
-                              sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "yes")),
-               sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "no")),
-                              sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "no")),
-                              sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "no"))),
-             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("yes","no"))))
+tab_reforested<- as.table(array(c(sum(with(cont_tab, 
+                tree_health_simplified == "healthy" & reforested == "yes")),
+                sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "yes")),
+                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "yes")),
+                sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "no")),
+                sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "no")),
+                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "no"))),
+                dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("yes","no"))))
 
 colnames(tab_reforested)<- c("reforested","naturally regeneration")
 
-# Pass data matrix to chisq.posthoc.test function
-names(attributes(tab_reforested)$dimnames) <- c("Healthy status", "Origin")
+
+names(attributes(tab_reforested)$dimnames) <- c("Health status", "Origin")
 
 # Barplot
-
-
 p_3a<-ggplot(cont_tab, aes(reforested, ..count..) ) +
   geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-   scale_x_discrete(breaks = c("no", "yes"),
-                   labels = c("naturally \n regeneration", "reforested"))+
-  scale_fill_manual(name ="Health status", values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"),
-                    labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+ ggtitle("a)")+ theme(legend.title.align = 0.5)+ theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  scale_x_discrete(breaks = c("no", "yes"),labels = c("Naturally \n regeneration", "Reforested"))+
+  scale_fill_manual(name ="Health status", values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"),labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ ggtitle("a)")+ theme(legend.title.align = 0.5)+ 
+  theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1))+
   labs(y="Number of trees", x= "Origin")
+p_3a
   
 # Mosaic Plot with vcd library
 p_3b<-mosaic(tab_reforested, shade=TRUE, legend=TRUE,
-                labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Pruebas de otros mosaicos
-## OPCION 1
-library("graphics")
-mosaicplot(tab_reforested, shade = TRUE, las=2,
-           main = "housetasks")
-## OPCION 2
-# install.packages("vcd")
-library("vcd")
-# plot just a subset of the table
-assoc(head(tab_reforested, 5), shade = TRUE, las=2)
+            labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
 
 # Chi2
 chisq <- chisq.test(tab_reforested)
 chisq
+
+Contingency <- function(x) {
+    chi <- chisq.test(x)
+    unname(sqrt(chi$statistic / (chi$statistic + sum(x))))
+}
+
+Contingency(tab_reforested)
 
 # Observed counts
 chisq$observed
@@ -380,7 +398,7 @@ corrplot(contrib, is.cor = FALSE)
 
 ```
 
-## Figure 3c y d Covered
+## Figure 3c y d Covered with reforested and natural regeneration
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
@@ -393,34 +411,22 @@ tab_covered<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "hea
              dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
 
 colnames(tab_covered)<- c("nursed","exposed")
-
-
-# Pass data matrix to chisq.posthoc.test function
-names(attributes(tab_covered)$dimnames) <- c("Healthy status", "Tree exposition")
+names(attributes(tab_covered)$dimnames) <- c("Health status", "Tree exposition")
 
 #Barplot
+
 p_3c<-ggplot(cont_tab, aes(tree_exposition, ..count..)) +
   geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_x_discrete(breaks = c("cover", "exposed"),
-                   labels = c("nursed", "exposed"))+
-  scale_fill_manual(name ="Health status", 
-                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
-                    labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+ ggtitle("c)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  scale_x_discrete(breaks = c("cover", "exposed"),labels = c("Nursed", "Exposed"))+
+  scale_fill_manual(name ="Health status",values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ 
+  ggtitle("c)")+theme(legend.title.align = 0.5)+
+  theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
   labs(y="Number of trees", x= "Tree exposition")
-  
-
+p_3c
 # Mosaic Plot with vcd library
 p_3d <- mosaic(tab_covered, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Pruebas de otros mosaicos
-## OPCION 1
-mosaicplot(tab_covered, shade = TRUE, las=2,
-           main = "housetasks")
-## OPCION 2
-# plot just a subset of the table
-assoc(head(tab_covered, 5), shade = TRUE, las=2)
 
 # Chi2
 chisq <- chisq.test(tab_covered)
@@ -443,6 +449,7 @@ contrib <- 100*chisq$residuals^2/chisq$statistic
 round(contrib, 3)
 
 # Visualize the contribution
+library(corrplot)
 corrplot(contrib, is.cor = FALSE)
 
 ```
@@ -450,7 +457,217 @@ corrplot(contrib, is.cor = FALSE)
 ## Multiplot
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p_3a, p_3c, p_3b, p_3d, cols=2)
+multiplot(p_3a, p_3b, p_3c, p_3d, cols=2)
+```
+
+## Figure 3c y d only reforested trees
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+
+# Select tree reforested and covered data 
+cont_tab_2<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")%>%
+  filter(reforested== "yes")
+count(cont_tab_2)
+count(cont_tab)
+table(cont_tab_2)
+
+
+
+tab_covered_2<- as.table(array(c(sum(with(cont_tab_2, tree_health_simplified == "healthy" & tree_exposition == "cover")),
+                sum(with(cont_tab_2, tree_health_simplified == "ozone" & tree_exposition == "cover")),
+                sum(with(cont_tab_2, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
+                sum(with(cont_tab_2, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
+                sum(with(cont_tab_2, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
+                sum(with(cont_tab_2, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
+             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
+
+colnames(tab_covered_2)<- c("nursed","exposed")
+names(attributes(tab_covered_2)$dimnames) <- c("Health status", "Tree exposition")
+
+#Barplot
+Rp_3a<-ggplot(cont_tab_2, aes(tree_exposition, ..count..)) +
+  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
+  scale_x_discrete(breaks = c("cover", "exposed"),
+                   labels = c("Nursed", "Exposed"))+
+  scale_fill_manual(name ="Health status", 
+                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
+                    labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ 
+  ggtitle("a)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
+  labs(y="Number of trees", x= "Tree exposition")
+  
+Rp_3a
+# Mosaic Plot with vcd library
+Rp_3b <- mosaic(tab_covered_2, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+
+# Chi2
+chisq <- chisq.test(tab_covered_2)
+chisq
+
+# Observed counts
+chisq$observed
+
+# Expected counts
+round(chisq$expected,2)
+
+# Pearson residuals (residuos estandarizados)
+round(chisq$residuals, 3)
+
+# Visuaalize Pearson residuals
+corrplot(chisq$residuals, is.cor = FALSE)
+
+# Contibution in percentage (%)
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+
+# Visualize the contribution
+library(corrplot)
+corrplot(contrib, is.cor = FALSE)
+
+```
+
+## Figure 3c y d NO reforested trees
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+
+# Select tree reforested and covered data 
+cont_tab_3<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")%>%
+  filter(reforested== "no")
+count(cont_tab_3)
+count(cont_tab)
+table(cont_tab_3)
+
+
+
+
+tab_covered_3<- as.table(array(c(sum(with(cont_tab_3, tree_health_simplified == "healthy" & tree_exposition == "cover")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone" & tree_exposition == "cover")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
+                sum(with(cont_tab_3, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
+             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
+
+colnames(tab_covered_3)<- c("nursed","exposed")
+names(attributes(tab_covered_3)$dimnames) <- c("Health status", "Tree exposition")
+
+#Barplot
+NRp_3c<-ggplot(cont_tab_3, aes(tree_exposition, ..count..)) +
+  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
+  scale_x_discrete(breaks = c("cover", "exposed"),
+                   labels = c("Nursed", "Exposed"))+
+  scale_fill_manual(name ="Health status", 
+                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
+                    labels= c("healthy", "ozone","ozone and other"))+
+  theme_bw()+ 
+  ggtitle("c)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
+  labs(y="Number of trees", x= "Tree exposition")
+  
+NRp_3c
+# Mosaic Plot with vcd library
+NRp_3d <- mosaic(tab_covered_3, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+
+# Chi2
+chisq <- chisq.test(tab_covered_3)
+chisq
+
+# Observed counts
+chisq$observed
+
+# Expected counts
+round(chisq$expected,2)
+
+# Pearson residuals (residuos estandarizados)
+round(chisq$residuals, 3)
+
+# Visuaalize Pearson residuals
+corrplot(chisq$residuals, is.cor = FALSE)
+
+# Contibution in percentage (%)
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+
+# Visualize the contribution
+library(corrplot)
+corrplot(contrib, is.cor = FALSE)
+
+```
+
+
+```{r, message=FALSE, fig.height=12, fig.width=16}
+multiplot(Rp_3a, NRp_3c, Rp_3b, NRp_3d, cols=2)
+```
+
+## Tabla contingencia ozone + other y combinados no ozono
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+
+# Select tree reforested and covered data 
+cont_tab_4<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>% filter(tree_health_simplified == "ozone_and_other"| tree_health_simplified == "others_combined" )%>%
+  filter(reforested== "yes")                                            
+
+count(cont_tab_4)
+table(cont_tab_4)
+
+
+
+tab_covered_4<- as.table(array(c(sum(with(cont_tab_4, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
+                sum(with(cont_tab_4, tree_health_simplified == "others_combined" & tree_exposition == "cover")),
+                sum(with(cont_tab_4, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed")),
+                sum(with(cont_tab_4, tree_health_simplified == "others_combined" & tree_exposition == "exposed"))),
+             dim=c(2,2), dimnames=list( c("ozone_and_other", "others_combined"), c("cover", "exposed"))))
+
+colnames(tab_covered_4)<- c("nursed","exposed")
+names(attributes(tab_covered_3)$dimnames) <- c("Health status", "Tree exposition")
+
+#Barplot
+p_3c<-ggplot(cont_tab_4, aes(tree_exposition, ..count..)) +
+  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
+  scale_x_discrete(breaks = c("cover", "exposed"),
+                   labels = c("Nursed", "Exposed"))+
+  scale_fill_manual(name ="Health status", 
+                    values = c("ozone_and_other" = "orangered1", "others_combined" = "cadetblue"), 
+                    labels= c("ozone and other", "others combined"))+
+  theme_bw()+ 
+  ggtitle(" ")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
+  labs(y="Number of trees", x= "Tree exposition")
+  
+p_3c
+# Mosaic Plot with vcd library
+p_3d <- mosaic(tab_covered_4, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+
+# Chi2
+chisq <- chisq.test(tab_covered_4)
+chisq
+
+# Observed counts
+chisq$observed
+
+# Expected counts
+round(chisq$expected,2)
+
+# Pearson residuals (residuos estandarizados)
+round(chisq$residuals, 3)
+
+# Visuaalize Pearson residuals
+corrplot(chisq$residuals, is.cor = FALSE)
+
+# Contibution in percentage (%)
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+
+# Visualize the contribution
+library(corrplot)
+corrplot(contrib, is.cor = FALSE)
+
 ```
 
 # Figure 4
@@ -458,23 +675,28 @@ multiplot(p_3a, p_3c, p_3b, p_3d, cols=2)
 ## Plot 4a
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
-p <- filter(muestreo_tidy, tree_heigth<15, tree_nodes>0) %>% 
+
+condition_HOO<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" |
+           tree_health_simplified == "ozone_and_other" )
+
+
+p <- filter(condition_HOO, tree_heigth<15, tree_nodes>0) %>% 
      ggplot(.) +
      scale_fill_manual(values= my_cols, breaks = desired_order,
                     labels= desired_names,
                     name= "Health status") +
 theme_bw()
 
-p4_a <- p + geom_histogram(aes(x=tree_nodes, 
-                      fill=tree_health_simplified))  +
+p4_a <- p + geom_histogram(aes(x=tree_nodes, fill=tree_health_simplified))  +
     labs(x="Tree age (years)", y= "Number of trees") +
     theme(text = element_text(size = 20)) +
-     theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+    theme(plot.title = element_text(lineheight=1.1))+
   ggtitle("a)")
 p4_a
 ```
 
-## Plot 4b
+## Plot 4c
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 ## base data
@@ -501,26 +723,28 @@ p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
                               name= "Ozone damage\n per tree") +
             theme_bw() + theme(text = element_text(size = 20)) 
 
-p4_b <- p_od +
+p4_c <- p_od +
   geom_bar(aes(x=tree_nodes,
                fill=ozone_damage_percentage)) +
   labs(x="Tree age (years)", y= "Number of trees") +
   theme(legend.title.align = 0.5)+
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
-  ggtitle("b)")
+  theme(plot.title = element_text(lineheight=1.1))+
+  ggtitle("c)")
 
-p4_b
+p4_c
+
 ```
 
-## Plot 4c
+## Plot 4b
 
-```{r fig.height=6, fig.width=6, message=FALSE}
+```{r, fig.height=6, fig.width=6, message=FALSE}
 
 # Filtrar por categoría de daño
 condition_HOO<-muestreo_tidy%>%
   filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" )
 
 condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
+
 
 
 # Data distribution
@@ -560,19 +784,20 @@ library(ggpubr)
 my_comparisons <- list( c("healthy", "ozone"), c("healthy", "ozone_and_other"), c("ozone", "ozone_and_other") )
 
 
-p4_c<-condition_HOO%>%
-   ggplot(aes(y= tree_nodes, x= tree_health_simplified))+
-          geom_boxplot(color="grey", notch = F)+
+p4_b<-condition_HOO%>%
+   ggplot(aes(y= tree_health_simplified, x= tree_nodes))+
         scale_color_manual(values=  my_cols, labels= desired_names,
-                    name= "Health status")+
+                    name= "")+
         geom_point(position="jitter",aes(color = tree_health_simplified), alpha=0.5, size= 2.5)+
-        xlab("")+ ylab("Tree age (years)")+
+  geom_boxplot(color="black", notch = F, alpha = 0.1)+
+        xlab("Tree age (years)")+ ylab("Health status")+
   theme_bw()+
-  ggtitle("c)")+
-  theme(text = element_text(size = 20), axis.text.x=element_blank())+
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  ggtitle("b)")+
+  theme(text = element_text(size = 20), axis.text.y=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  scale_x_continuous(breaks=c(5,10,15, 20, 25))+
   stat_compare_means(comparisons = my_comparisons, label = "p.signif")
-p4_c
+p4_b
 
 
 ```
@@ -608,26 +833,26 @@ my_comparisons <- list(c("0%", "less than 10%"), c("0%", "10 to 40%"), c("0%", "
 
 # Plot
 p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>% 
-   ggplot(aes(y= tree_nodes, x= ozone_damage_percentage))+
-          geom_boxplot(color="grey", notch = F)+
+   ggplot(aes(y=ozone_damage_percentage , x= tree_nodes))+
         scale_color_manual(values=  my_cols2,labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
                                          "50 to 70%", "more 70%"))+
         geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5, size= 2.5)+
-        xlab("")+ ylab("Tree age (years)")+
-  labs(color = "Ozone damage\n per tree")+
+        xlab("Tree age (years)")+ ylab("Ozone damage per tree")+
+  labs(color = "")+
+          geom_boxplot(color="black", notch = F, alpha = 0.1)+
   theme_bw()+
   ggtitle("d)")+
   theme(legend.title.align = 0.5)+
-  theme(text = element_text(size = 20), axis.text.x=element_blank())+
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
+  theme(text = element_text(size = 20),axis.text.y=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  scale_x_continuous(breaks=c(5,10,15, 20, 25))+
   ggpubr::stat_compare_means(comparisons = my_comparisons, label="p.signif")
 
 
 p4_d
 ```
 
-
-## Multiplot
+# Multiplot Fig 4
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
 multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
@@ -635,43 +860,335 @@ multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
 
 # Figure 5
 
+## Model all  data WITHOUT cohort
 
-```{r, fig.height=6, fig.width=10, message=FALSE}
-# Filtrar por categoría de daño
-condition_HOO<-muestreo_tidy%>%
-  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" )
+```{r, height=6, fig.width=10, message=FALSE}
 
-condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
+# We chose trees with high less to 16
+condition_model_all<-dplyr::select(muestreo_tidy, contains(c("tree_heigth","tree_nodes","tree_health_simplified", "reforested", "tree_exposition")))%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other" )%>%
+  filter(tree_nodes < 15)
 
-# Modelo 3  - Edad, salud y estructura espacial afectan crecimiento
-glm3<-glm(log10(tree_heigth) ~ tree_nodes*tree_health_simplified + tree_exposition + reforested, data = condition_HOO)
+########################
 
-# Ho= hay normalidad, si pvalues es mayor a 0.05 se acepta la Ho por lo tanto pvalue mayor a 0.05 hay normalidad 
-shapiro.test(glm3$residuals) # Normalidad ( Datos normales si es mayor a 0.05)
-
-cor.test(abs(glm3$residuals), glm3$fitted.values) #Homocedasticidad: Valor no significativa sig que si hay homocedasticidad
-
+model<- glm(tree_heigth ~ ., data = condition_model_all, family = Gamma(link = "log"))
+summary(model)
+#### PLOT MODEL
 par(mfrow =c(2,2))
-plot(glm3)
+plot(model)
 
-summary(glm3)
+# Model all independent variables WITH health status interaction 
+glm_1<-glm(tree_heigth ~ tree_nodes*tree_health_simplified + tree_exposition + reforested, data = condition_model_all, family = Gamma(link = "log"))
+summary(glm_1)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_1)
 
-# Graficar modelo 3
-Tree_height_plot<-ggplot(condition_HOO, aes(x = tree_nodes, y = log(tree_heigth))) + geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5) + geom_smooth(method="glm",aes(color= tree_health_simplified), fullrange =T)+
-  labs( y = "log(Tree higth)", x = "Tree age (years)", color = "Health status")+
-  scale_color_manual(values=  my_cols, labels= desired_names,
-                    name= "Health status")+
-  theme(text = element_text(size = 20), axis.text.x=element_blank())+
-  theme(plot.title = element_text(lineheight=1.1, face="bold"))+
-  theme_bw()
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested data
+glm_2<-glm(tree_heigth ~ tree_nodes*tree_health_simplified + tree_exposition, data = condition_model_all, family = Gamma(link = "log"))
+summary(glm_2)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_2)
 
-Tree_height_plot
+########################
+# Model all independent variables WITH health status interaction WITHOUT tree exposition data
+glm_3<-glm(tree_heigth ~ tree_nodes*tree_health_simplified + reforested, data = condition_model_all, family = Gamma(link = "log"))
+summary(glm_3)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_3)
+
+
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested and tree exposition data
+glm_4<-glm(tree_heigth ~ tree_nodes*tree_health_simplified, data = condition_model_all, family = Gamma(link = "log"))
+summary(glm_4)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_4)
+
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested and tree exposition data
+glm_5<-glm(tree_heigth ~ tree_nodes, data = condition_model_all, family = Gamma(link = "log"))
+summary(glm_5)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_5)
+
+# Choose better model
+AIC(model,glm_1,glm_2,glm_3, glm_4, glm_5)
+
+# glm_1<-glm(tree_heigth ~ tree_nodes*tree_health_simplified + tree_exposition + reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+# glm_2<-glm(tree_heigth ~ tree_nodes*tree_health_simplified + tree_exposition, data = condition_model_all_C, family = Gamma(link = "log"))
+# glm_3<-glm(tree_heigth ~ tree_nodes*tree_health_simplified + reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+# glm_4<-glm(tree_heigth ~ tree_nodes*tree_health_simplified, data = condition_model_all_C, family = Gamma(link = "log"))
+# glm_5<-glm(tree_heigth ~ tree_nodes, data = condition_model_all_C, family = Gamma(link = "log"))
 
 ```
 
-# Figure S2
+## Plot model all  data WITHOUT cohort
 
-```{r, fig.height=20, fig.width=20, message=FALSE}
+```{r, height=6, fig.width=10, message=FALSE}
+
+# https://rpubs.com/dgolicher/ggplots2
+# https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
+
+g0<-ggplot(condition_model_all,aes(x=tree_nodes,y=tree_heigth))
+
+# method = "glm", method.args = list(family = Gamma(link = "log"))
+fig5all<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
+    ylim(0,15)+
+  geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), aes(color= tree_health_simplified), fullrange =T)+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+ 
+  labs(x="Tree age (years)", y= "Tree height")+
+  theme_bw()+ 
+  ggtitle("a)")
+fig5all
+
+```
+
+## Select cohort data
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+cohort_data<- dplyr::select(condition_HOO, contains(c("tree_health_simplified", "tree_nodes")))%>% filter(tree_health_simplified == "ozone")
+summary(cohort_data)
+# We choose 7 & 11
+```
+
+## Model all data with cohort 7-11
+
+```{r, height=6, fig.width=10, message=FALSE}
+
+condition_model_all_C<-dplyr::select(muestreo_tidy, contains(c("tree_heigth","tree_nodes","tree_health_simplified", "reforested", "tree_exposition")))%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other" )%>%
+  filter(tree_nodes %in% (7:11))%>%
+  filter(tree_nodes < 15)
+
+
+########################
+
+model<- glm(tree_heigth ~ ., data = condition_model_all_C, family = Gamma(link = "inverse"))
+summary(model)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(model)
+
+
+########################
+
+# Model all independent variables WITH health status interaction 
+glm_1_coh<-glm(tree_heigth ~ tree_nodes*tree_health_simplified*tree_exposition * reforested * tree_exposition, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_1_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_1_coh)
+
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested data
+glm_2_coh<-glm(tree_heigth ~ tree_nodes+tree_health_simplified + tree_exposition + reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_2_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_2_coh)
+
+########################
+# Model all independent variables WITH health status interaction WITHOUT tree exposition data
+glm_3_coh<-glm(tree_heigth ~ tree_nodes+tree_health_simplified + reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_3_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_3_coh)
+
+
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested and tree exposition data
+glm_4_coh<-glm(tree_heigth ~ tree_nodes+tree_health_simplified + tree_exposition , data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_4_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_4_coh)
+
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested and tree exposition data
+glm_5_coh<-glm(tree_heigth ~ tree_nodes, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_5_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_5_coh)
+
+
+########################
+glm_6_coh<-glm(tree_heigth ~ tree_nodes*tree_health_simplified*tree_exposition + reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_6_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_6_coh)
+
+########################
+glm_7_coh<-glm(tree_heigth ~ tree_nodes*tree_health_simplified*reforested + tree_exposition, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_7_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_7_coh)
+
+########################
+glm_8_coh<-glm(tree_heigth ~ tree_nodes*tree_health_simplified*tree_exposition+reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_8_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_8_coh)
+
+########################
+glm_9_coh<-glm(tree_heigth ~ tree_nodes*tree_health_simplified*(tree_exposition+reforested), data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_9_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_9_coh)
+
+# Choose better model
+AIC(model,glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh, glm_8_coh,glm_9_coh)
+
+
+
+####################3
+
+######
+
+library(forestmodel)
+coef(glm_7_coh)
+summary(glm_7_coh)
+
+library(jtools)
+summ(glm_7_coh, exp = T, confint = T)
+forestmodel::forest_model(glm_7_coh)
+
+
+```
+
+## Fig 5a: Plot model aLL data  with cohort
+
+```{r, height=6, fig.width=10, message=FALSE}
+#
+# https://rpubs.com/dgolicher/ggplots2
+# https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
+
+g0<-ggplot(condition_model_all_C,aes(x=tree_nodes,y=tree_heigth))
+
+# method = "glm", method.args = list(family = Gamma(link = "log"))
+fig5a<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
+    ylim(0,15)+
+  geom_smooth(method = "glm", method.args = list(family = Gamma(link = "inverse")), aes(color= tree_health_simplified, fullrange =T))+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+ 
+  guides(color = guide_legend(order=1))+
+  labs(x="Tree age (years)", y= "Tree height")+
+  theme_bw()+ 
+  theme(legend.key.size = unit(0.7, 'cm'),
+        legend.key.width= unit(0.7, 'cm'),
+        legend.title = element_text(size=10),
+        legend.text = element_text(size=10))+
+  theme(text = element_text(size = 20))+
+  theme(legend.title.align = 0.5)+
+  ggtitle("a)")
+fig5a
+
+```
+
+## Fig 5b: Plot model ORIGIN data  with cohort
+
+```{r, height=6, fig.width=10, message=FALSE}
+#
+# https://rpubs.com/dgolicher/ggplots2
+# https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
+
+g0<-ggplot(condition_model_all_C,aes(x=tree_nodes,y=tree_heigth))
+
+# method = "glm", method.args = list(family = Gamma(link = "log"))
+fig5b<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
+    ylim(0,15)+
+  geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), aes(color= tree_health_simplified, linetype = reforested), fullrange =T)+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+ 
+  scale_linetype_manual(values= c("solid", "dashed"),labels = c("Naturally \n regeneration", "Reforested"), name= "Origin")+
+  guides(color = guide_legend(order=1))+
+  labs(x="Tree age (years)", y= "Tree height")+
+  theme_bw()+ 
+  theme(legend.key.size = unit(0.7, 'cm'),
+        legend.key.width= unit(0.7, 'cm'),
+        legend.title = element_text(size=10),
+        legend.text = element_text(size=10))+
+  theme(text = element_text(size = 20))+
+  theme(legend.title.align = 0.5)+
+  ggtitle("b)")
+fig5b
+
+
+```
+
+## Fig 5c: model EXPOSITION data  with cohort
+
+```{r, height=6, fig.width=10, message=FALSE}
+#
+# https://rpubs.com/dgolicher/ggplots2
+# https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
+
+g0<-ggplot(condition_model_all_C,aes(x=tree_nodes,y=tree_heigth))
+
+# method = "glm", method.args = list(family = Gamma(link = "log"))
+fig5c<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
+    ylim(0,15)+
+  geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), aes(color= tree_health_simplified,linetype = tree_exposition), fullrange =T)+
+  scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "Health status")+ 
+  scale_linetype_manual(values= c("solid", "dashed"),labels = c("Nursed", "Exposed"), name= "Tree exposition",)+
+  guides(color = guide_legend(order=1))+
+  labs(x="Tree age (years)", y= "Tree height")+
+  #stat_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), se = TRUE)+
+  theme_bw()+ 
+  theme(legend.key.size = unit(0.7, 'cm'),
+        legend.key.width= unit(0.7, 'cm'),
+        legend.title = element_text(size=10),
+        legend.text = element_text(size=10))+
+  theme(text = element_text(size = 20))+
+  theme(legend.title.align = 0.5)+
+  ggtitle("c)")
+fig5c
+
+```
+
+# Multiplot Fig 5
+```{r, fig.height=16, fig.width=10, message=FALSE}
+
+multiplot(fig5a, fig5b, fig5c, cols=1)
+
+```
+
+# Figure S8
+```{r, message=FALSE, fig.height=9, fig.width=11}
+p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
+  geom_bar(stat="identity") +
+  scale_fill_manual(values= my_cols, breaks = desired_order,
+                    labels= desired_names,
+                    name= "Health status") 
+  
+
+p_d <- p_d + theme_bw() +
+  labs(x="Plots", y= "Number of trees") +
+  theme(text = element_text(size = 20)) +
+  ggtitle("")+
+  coord_flip()
+p_d 
+
+
+
+```
+
+# Figure S11
+
+```{r, height=20, fig.width=20, message=FALSE}
 # plot pies in map
 p_satmap <-  ggmap(sat_map)
 p_satmap +geom_scatterpie(data=parcelas_tidy,
@@ -689,10 +1206,10 @@ p_satmap +geom_scatterpie(data=parcelas_tidy,
 
 ```
 
-# Figure S3
+# Figure S12
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
-# Create new variable with porcentage of ozone damage
+```{r, height=6, fig.width=6, message=FALSE}
+# Create new variable with percentage of ozone damage
 parcelas_tidy<-parcelas_tidy %>% rowwise() %>% 
                      mutate(., 
                       total=sum(healthy,ozone,ozone_and_other,
@@ -702,45 +1219,44 @@ parcelas_tidy<-parcelas_tidy %>% rowwise() %>%
                           worm)) %>%
                     mutate(perc.ozone= sum(ozone, ozone_and_other)/total)
 
+#Statistical
+leveneTest( parcelas_tidy$X_coordinates_altitude, parcelas_tidy$perc.ozone)
+
+
 #plot
 p <- ggplot(parcelas_tidy) +
      geom_point(aes(x=X_coordinates_altitude,
              y=perc.ozone))
 
 
-
 p<- ggplot(parcelas_tidy, aes(X_coordinates_altitude, perc.ozone ))+
   geom_point(color= "grey50", size = 3, alpha = 0.6)
 
-p + 
+p<-p + 
   stat_smooth(color = "skyblue", formula = y ~ x,fill = "skyblue", method = "lm") +
   stat_poly_eq(
     aes(label = paste(..eq.label.., ..adj.rr.label.., sep = '~~~~')),
     formula = y ~ x,  parse = TRUE,
-      size = 10, # Tamaño de fuente de la fórmula
+      size = 5, # Tamaño de fuente de la fórmula
              label.x = 0.1, #location, la proporción entre 0-1
       label.y = 0.95)+
-  labs(x="Plot altitude", y= "Percentage of ozone damaged trees")+
+  labs(x="Plot altitude", y= "Percentage of ozone damaged trees within a plot")+
   theme_bw() +
    theme(plot.title = element_text(lineheight=1.1, face="bold")) +
-  theme(text = element_text(size = 20))
+  theme(text = element_text(size = 20), 
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        axis.text=element_text(size=9))
+
+p
+ggsave("../outputs/FigS3.png",
+       dpi = 600)
 
 ```
 
-# Figura S4
+# RESULTS Mean and sd of trees collected by each ranger during Participatory monitoring
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
-
-
-```
-
-
-```{r, fig.height=6, fig.width=6, message=FALSE}
-```
-
-# RESULTS Participatory monitoring
-
-```{r, fig.height=6, fig.width=6, message=FALSE}
+```{r, height=6, fig.width=6, message=FALSE}
 # No se incluye a M (37) y PP (6), ya que eran colectados por diferentes miembros del team
 trees<- c(135,133,130,174,150,139,165,166,133,137,125,105)
 rangers<- c("A","B","C","D","E","F","G","H", "I", "J", "K", "L")
@@ -749,9 +1265,21 @@ sd(trees)
 
 ```
 
-# Damage percentage
+# Percentage damage in plots
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
+```{r, height=6, fig.width=6, message=FALSE}
+#Percentage damage plots
+
+PDP<-data.frame(parcelas_tidy$plot, parcelas_tidy$perc.ozone)
+
+PDP<-PDP[order(PDP$parcelas_tidy.plot),]
+range(PDP$parcelas_tidy.perc.ozone)
+head(PDP[order(PDP$parcelas_tidy.perc.ozone),])
+```
+
+# Percentage per each health status
+
+```{r, height=6, fig.width=6, message=FALSE}
 
 # Create new variable with porcentage of ozone damage
 
@@ -764,28 +1292,283 @@ count_HS<-c(sum(parcelas_tidy$healthy), sum(parcelas_tidy$ozone),
             sum(parcelas_tidy$acid_rain),sum(parcelas_tidy$other),
             sum(parcelas_tidy$others_combined), sum(parcelas_tidy$dead),
             sum(parcelas_tidy$fungi), sum(parcelas_tidy$worm))
+sum(count_HS)
 
+# Tree number to each health status
 percentageH<-data.frame(status_HS, count_HS)
+percentageH
 
+# Percentage of ozone and ozone + other trees
 (sum(c(parcelas_tidy$ozone, parcelas_tidy$ozone_and_other))*100)/sum(count_HS)
 
+# Percentage of healthy trees
 (sum(parcelas_tidy$healthy)*100)/sum(count_HS)
 
+# Percentage of others damages in trees with dead trees
 (sum(c(parcelas_tidy$drougth, parcelas_tidy$acid_rain , parcelas_tidy$other, parcelas_tidy$others_combined,parcelas_tidy$dead, parcelas_tidy$fungi, parcelas_tidy$worm))*100)/sum(count_HS)
 ```
 
-# Percentage damage in plots
+```{r height=6, fig.width=6, message=FALSE}
+
+# Filtrar por categoría de daño
+condition_HOz<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone")
+
+condition_HOz$tree_health_simplified <- as.factor(condition_HOz$tree_health_simplified)
+
+
+# Damages by other NO ozone NO DEAD
+levels(as.factor(muestreo_tidy$tree_health_simplified))
+no_ozone<- dplyr::select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "acid_rain"| tree_health_simplified == "fungi" | tree_health_simplified == "others_combined" | tree_health_simplified == "worm" | tree_health_simplified == "drougth"| tree_health_simplified == "other")
+
+(609*100)/1765
+
+# Percentage of DEAD trees
+levels(as.factor(muestreo_tidy$tree_health_simplified))
+dead<- dplyr::select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "dead")
+count(dead)
+(43*100)/1765
+
+sum(489,125, 499,1,9,70, 3,271,255, 43)
+```
+# Chi test
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
-#Percentage damage plots
 
-PDP<-data.frame(parcelas_tidy$plot, parcelas_tidy$perc.ozone)
+count(dplyr::select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "ozone"))
 
-PDP<-PDP[order(PDP$parcelas_tidy.plot),]
-range(PDP$parcelas_tidy.perc.ozone)
-head(PDP[order(PDP$parcelas_tidy.perc.ozone),])
+count(dplyr::select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
+  filter(tree_health_simplified == "ozone_and_other"))
+
+OBS_ozo<-c(125,499)
+ESP_ozo<-c(0.5, 0.5)
+chisq.test(x = OBS_ozo,
+           p = ESP_ozo)
+
+#224.1603
+#p-value < 2.2e-16
+# p<0.001
+
+```
+
+
+## Plot 4b
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+# Filtrar por categoría de daño
+condition_Reforested<-muestreo_tidy%>%
+  filter(reforested == "yes" | reforested == "no")
+
+condition_Reforested$reforested <- as.factor(condition_Reforested$reforested)
+
+
+# Data distribution
+
+# Los datos tienen a graficar es el número de nodos para cada categoria de salud.
+# Los datos son continuos discretos, por lo tanto el analisis a seguir para buscar diferencias entre los grupos son:
+
+shapiro.test(condition_Reforested$tree_nodes) #NO HAY NORMALIDAD 
+
+# Procedo a hacer una prueba no paramétrica (kruskal)
+
+# Debe tener Homocedasticidad: la varianza debe de ser constante entre todos los grupos.
+# If the p-value is less than our chosen significance level, we can reject the null hypothesis and conclude that we have enough evidence to state that the variance among the groups is not equal.
+leveneTest(sqrt(tree_nodes) ~ reforested, data = condition_Reforested) #Opera con medias
+
+# As the p value obtained from the Shapiro-Wilk test and Levene’s test is significant (p < 0.05), we conclude that the data is not normally distributed and does not have equal variance. Kruskal-Wallis test is more appropriate for analyzing differences.
+
+kruskal.test(sqrt(tree_nodes) ~ reforested, data = condition_Reforested) #opera con mediana
+
+#As the p value obtained from the Kruskal-Wallis test test is significant , we conclude that there are significant differences.
+
+# For the Kruskal-Wallis test, epsilon-squared is a method of choice for effect size measurement. The epsilon-squared is 0.74 and suggests a very strong effect of plant varieties on yield
+
+# calculate effect size. Hay efecto relativamente fuerte
+library(rcompanion)
+epsilonSquared(x = sqrt(condition_Reforested$tree_nodes), g = condition_Reforested$reforested)
+
+# https://peterstatistics.com/CrashCourse/3-TwoVarUnpair/NomOrd/NomOrd3c.html
+# To know which plant varieties are significantly different from each other, we will perform the Dunn’s test as post-hoc test for significant Kruskal-Wallis test. As there are multiple comparisons, we will correct the p values using Benjamini-Hochberg FDR method for multiple hypothesis testing at a 5% cut-off. The other tests that can be used for post-hoc test includes Conover and Nemenyi tests. Dunn’s test is more appropriate post-hoc than the Mann-Whitney U test for significant Kruskal-Wallis test as it retains the rank sums of the Kruskal-Wallis.
+
+#poshoc para saber que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_Reforested$tree_nodes), g = condition_Reforested$reforested, p.adjust.method = "holm" )
+
+
+# Perorm pairwise comparisons
+library(ggpubr)
+my_comparisons <-  c("no", "yes") 
+
+
+p4_b<-condition_Reforested%>%
+   ggplot(aes(y= reforested, x= tree_nodes))+
+        geom_point(position="jitter",aes(color = reforested), alpha=0.5, size= 2.5)+
+  geom_boxplot(color="black", notch = F, alpha = 0.1)+
+        xlab("Tree age (years)")+ ylab("Origin")+
+  theme_bw()+
+  ggtitle("")+
+  theme(text = element_text(size = 20), axis.text.y=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  scale_x_continuous(breaks=c(5,10,15, 20, 25))+
+  stat_compare_means(comparisons = my_comparisons, label = "p.signif")
+p4_b
+
+
+```
 
 
 
 
+## Plot 4b
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+
+# Filtrar por categoría de daño
+condition_HOO<-muestreo_tidy%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other" |  tree_health_simplified == "others_combined")
+
+condition_HOO$tree_health_simplified <- as.factor(condition_HOO$tree_health_simplified)
+
+
+
+# Data distribution
+
+# Los datos tienen a graficar es el número de nodos para cada categoria de salud.
+# Los datos son continuos discretos, por lo tanto el analisis a seguir para buscar diferencias entre los grupos son:
+
+shapiro.test(condition_HOO$tree_nodes) #NO HAY NORMALIDAD 
+
+# Procedo a hacer una prueba no paramétrica (kruskal)
+
+# Debe tener Homocedasticidad: la varianza debe de ser constante entre todos los grupos.
+# If the p-value is less than our chosen significance level, we can reject the null hypothesis and conclude that we have enough evidence to state that the variance among the groups is not equal.
+leveneTest(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO) #Opera con medias
+
+# As the p value obtained from the Shapiro-Wilk test and Levene’s test is significant (p < 0.05), we conclude that the data is not normally distributed and does not have equal variance. Kruskal-Wallis test is more appropriate for analyzing differences.
+
+kruskal.test(sqrt(tree_nodes) ~ tree_health_simplified, data = condition_HOO) #opera con mediana
+
+#As the p value obtained from the Kruskal-Wallis test test is significant , we conclude that there are significant differences.
+
+# For the Kruskal-Wallis test, epsilon-squared is a method of choice for effect size measurement. The epsilon-squared is 0.74 and suggests a very strong effect of plant varieties on yield
+
+# calculate effect size. Hay efecto relativamente fuerte
+library(rcompanion)
+epsilonSquared(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified)
+
+# https://peterstatistics.com/CrashCourse/3-TwoVarUnpair/NomOrd/NomOrd3c.html
+# To know which plant varieties are significantly different from each other, we will perform the Dunn’s test as post-hoc test for significant Kruskal-Wallis test. As there are multiple comparisons, we will correct the p values using Benjamini-Hochberg FDR method for multiple hypothesis testing at a 5% cut-off. The other tests that can be used for post-hoc test includes Conover and Nemenyi tests. Dunn’s test is more appropriate post-hoc than the Mann-Whitney U test for significant Kruskal-Wallis test as it retains the rank sums of the Kruskal-Wallis.
+
+#poshoc para saber que grupos difieren
+pairwise.wilcox.test(x = sqrt(condition_HOO$tree_nodes), g = condition_HOO$tree_health_simplified, p.adjust.method = "holm" )
+
+
+# Perorm pairwise comparisons
+library(ggpubr)
+my_comparisons_2 <- list(c("others_combined","ozone"), c("healthy","others_combined"), c("others_combined", "ozone_and_other"))
+
+
+p4_b<-condition_HOO%>%
+   ggplot(aes(y= tree_health_simplified, x= tree_nodes))+
+        scale_color_manual(values=  my_cols, labels= desired_names,
+                    name= "")+
+        geom_point(position="jitter",aes(color = tree_health_simplified), alpha=0.5, size= 2.5)+
+  geom_boxplot(color="black", notch = F, alpha = 0.1)+
+        xlab("Tree age (years)")+ ylab("Health status")+
+  theme_bw()+
+  ggtitle("")+
+  theme(text = element_text(size = 20), axis.text.y=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  scale_x_continuous(breaks=c(5,10,15, 20, 25))+
+  stat_compare_means(comparisons = my_comparisons_2, label = "p.signif")
+p4_b
+
+ggpubr::compare_means(tree_nodes ~ tree_health_simplified, data = condition_HOO)
+```
+
+
+## Plot 4d
+
+```{r, fig.height=6, fig.width=6, message=FALSE}
+# Select tree reforested and covered data 
+cont_tab_3<- select(muestreo_tidy, contains(c("tree_health_simplified", "ozone_damage_percentage"))) %>%
+  filter(tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")
+count(cont_tab_3)
+
+table(cont_tab_3)
+
+
+tab_covered_3<- as.table(array(c(sum(with(cont_tab_3, tree_health_simplified == "ozone" & ozone_damage_percentage == "10 to 40%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & ozone_damage_percentage == "10 to 40%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone" & ozone_damage_percentage == "40 to 50%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & ozone_damage_percentage == "40 to 50%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone" & ozone_damage_percentage == "50 to 70%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & ozone_damage_percentage == "50 to 70%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone" & ozone_damage_percentage == "less than 10%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & ozone_damage_percentage == "less than 10%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone" & ozone_damage_percentage == "more than 70%")),
+                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & ozone_damage_percentage == "more than 70%"))),
+             dim=c(2,5), dimnames=list( c("ozone","ozone and other"), c("10 to 40%", "40 to 50%", "50 to 70%", "less than 10%", "more than 70%"))))
+
+colnames(tab_covered_3)<- c("10 to 40%", "40 to 50%", "50 to 70%", "less than 10%", "more than 70%")
+names(attributes(tab_covered_2)$dimnames) <- c("Health status", "Ozone damage percentage")
+
+#Barplot
+Rp_3a<-ggplot(cont_tab_3, aes(ozone_damage_percentage, ..count..)) +
+  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
+  scale_x_discrete(breaks = c("cover", "exposed"))+
+  scale_fill_manual(name ="Health status", 
+                    values = c("ozone" = "darkred", "ozone_and_other" = "orangered1"), 
+                    labels= c("ozone","ozone and other"))+
+  theme_bw()+ 
+  ggtitle("a)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
+  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
+  labs(y="Number of trees", x= "Ozone damage percentage")
+  
+Rp_3a
+
+# Mosaic Plot with vcd library
+Rp_3b <- mosaic(tab_covered_3, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
+
+Rp_3b 
+
+my_comparisons <- list(c("0%", "less than 10%"), c("0%", "10 to 40%"), c("0%", "40 to 50%"),
+                        c("0%", "50 to 70%"), c("0%", "more than 70%"),
+                        c("less than 10%", "50 to 70%"), 
+                       c("10 to 40%", "50 to 70%"))
+
+
+```
+
+```{r, fig.height=10, fig.width=20, message=FALSE}
+# Plot
+my_comparisons <- list(c("0%", "less than 10%"), c("0%", "10 to 40%"), c("0%", "40 to 50%"),
+                        c("0%", "50 to 70%"), c("0%", "more than 70%"),
+                        c("less than 10%", "50 to 70%"), 
+                       c("10 to 40%", "50 to 70%"))
+
+p4_d<-condition_PO%>% filter(!is.na(ozone_damage_percentage)) %>% 
+   ggplot(aes(y=ozone_damage_percentage , x= tree_nodes))+
+        scale_color_manual(values=  my_cols2,labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
+                                         "50 to 70%", "more 70%"))+
+        geom_point(position="jitter",aes(color = ozone_damage_percentage), alpha=0.5, size= 2.5)+
+        xlab("Tree age (years)")+ ylab("Ozone damage per tree")+
+  labs(color = "")+
+          geom_boxplot(color="black", notch = F, alpha = 0.1)+
+  facet_wrap(~tree_health_simplified, labeller = as_labeller(c(healthy= "Healthy",
+                                                               ozone= "Ozone",
+                                                             ozone_and_other="Ozone and other"))) +
+  theme_bw()+
+  ggtitle("")+
+  theme(legend.title.align = 0.5)+
+  theme(text = element_text(size = 20),axis.text.y=element_blank())+
+  theme(plot.title = element_text(lineheight=1.1))+
+  theme(text = element_text(size = 20))+
+  scale_x_continuous(breaks=c(5,10,15, 20, 25))
+
+
+p4_d
 ```
