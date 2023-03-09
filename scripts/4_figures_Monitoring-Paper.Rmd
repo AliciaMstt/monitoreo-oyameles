@@ -716,17 +716,27 @@ condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_perc
 
 # Plot
 p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
-            ggplot() +
-            scale_fill_manual(values= my_cols2, 
-                              breaks = desired_order_percentage,
-                              labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
-                                         "50 to 70%", "more 70%"),
-                              name= "Ozone damage\n per tree") +
-            theme_bw() + theme(text = element_text(size = 20)) 
+  ggplot(., aes(x = tree_nodes, fill = ozone_damage_percentage)) +
+  geom_bar_pattern(aes(pattern = ozone_damage_percentage),
+                   color = "black",
+                   pattern_fill = "black",
+                   pattern_density = 0.1,
+                   pattern_spacing = 0.025,
+                   pattern_key_scale_factor = 0.6) +
+  scale_fill_manual(values= my_cols2, 
+                    breaks = desired_order_percentage,
+                    labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
+                               "50 to 70%", "more 70%"),
+                    name= "Ozone damage\n per tree") +
+  scale_pattern_manual(name= "Ozone damage\n per tree",
+                       values =c("none","none", "stripe", "none",
+                                 "none", "none"),
+                       labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
+                                  "50 to 70%", "more 70%"))
+
+p_od
 
 p4_c <- p_od +
-  geom_bar(aes(x=tree_nodes,
-               fill=ozone_damage_percentage)) +
   labs(x="Tree age (years)", y= "Number of trees") +
   theme(legend.title.align = 0.5)+
   theme(plot.title = element_text(lineheight=1.1))+
