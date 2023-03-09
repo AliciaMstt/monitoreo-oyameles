@@ -1103,11 +1103,21 @@ multiplot(fig5a, fig5b, fig5c, cols=1)
 
 # Figure S8
 ```{r, message=FALSE, fig.height=9, fig.width=11}
-p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees,     fill=tree_health_simplified)) +
-  geom_bar(stat="identity") +
+p_d <- ggplot(parcelas_long, aes(x=plot, y=n_trees, fill=tree_health_simplified)) +
+  geom_bar_pattern(stat="identity",
+                   aes(pattern = tree_health_simplified),
+                   color = "black",
+                   pattern_fill = "black",
+                   pattern_density = 0.1,
+                   pattern_spacing = 0.015,
+                   pattern_key_scale_factor = 0.6) +
   scale_fill_manual(values= my_cols, breaks = desired_order,
                     labels= desired_names,
-                    name= "Health status") 
+                    name= "Health status") + 
+  scale_pattern_manual(name= "Health status", breaks = desired_order,
+                       values=c ("none",  "none", "none", "none", 
+                                 "crosshatch", "none", "stripe", "circle", "none", "none"),
+                       labels = desired_names)
   
 
 p_d <- p_d + theme_bw() +
@@ -1116,8 +1126,6 @@ p_d <- p_d + theme_bw() +
   ggtitle("")+
   coord_flip()
 p_d 
-
-
 
 ```
 
