@@ -864,21 +864,13 @@ multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
 ## Plot model all  data WITHOUT cohort
 
 ```{r, height=6, fig.width=10, message=FALSE}
-condition_model_all<-dplyr::select(muestreo_tidy, contains(c("tree_heigth","tree_nodes","tree_health_simplified", "reforested", "tree_exposition", "plot")))%>%
-  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other" )%>%
-  filter(tree_nodes < 15)
-
-# https://rpubs.com/dgolicher/ggplots2
-# https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
-
-g0<-ggplot(condition_model_all,aes(x=tree_nodes,y=tree_heigth))
-
-# method = "glm", method.args = list(family = Gamma(link = "log"))
-fig5all<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
-    ylim(0,15)+
+fig5all<-g0+geom_point(aes(colour=tree_health_simplified, 
+                           shape=tree_health_simplified), alpha=0.5, size= 2.5)+
+  ylim(0,15)+
   geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), aes(color= tree_health_simplified), fullrange =T)+
   scale_color_manual(values=  my_cols, labels= desired_names,
-                    name= "Health status")+ 
+                     name= "Health status")+ 
+  scale_shape_manual(name= "Health status", labels=desired_names, values = c(15,16,17)) + 
   labs(x="Tree age (years)", y= "Tree height")+
   theme_bw()+ 
   ggtitle("a)")
@@ -1011,12 +1003,13 @@ forestmodel::forest_model(glm_7_coh)
 g0<-ggplot(condition_model_all_C,aes(x=tree_nodes,y=tree_heigth))
 
 # method = "glm", method.args = list(family = Gamma(link = "log"))
-fig5a<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
-    ylim(0,15)+
+fig5a<-g0+geom_point(aes(colour=tree_health_simplified,
+                         shape=tree_health_simplified), alpha=0.5, size= 2.5)+
+  ylim(0,15)+
   geom_smooth(method = "glm", method.args = list(family = Gamma(link = "inverse")), aes(color= tree_health_simplified, fullrange =T))+
   scale_color_manual(values=  my_cols, labels= desired_names,
-                    name= "Health status")+ 
-  guides(color = guide_legend(order=1))+
+                     name= "Health status")+ 
+  scale_shape_manual(name= "Health status", labels=desired_names, values = c(15,16,17)) + 
   labs(x="Tree age (years)", y= "Tree height")+
   theme_bw()+ 
   theme(legend.key.size = unit(0.7, 'cm'),
@@ -1037,16 +1030,14 @@ fig5a
 # https://rpubs.com/dgolicher/ggplots2
 # https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
 
-g0<-ggplot(condition_model_all_C,aes(x=tree_nodes,y=tree_heigth))
-
-# method = "glm", method.args = list(family = Gamma(link = "log"))
-fig5b<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
-    ylim(0,15)+
+fig5b<-g0+geom_point(aes(colour=tree_health_simplified,
+                         shape=tree_health_simplified), alpha=0.5, size= 2.5)+
+  ylim(0,15)+
   geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), aes(color= tree_health_simplified, linetype = reforested), fullrange =T)+
   scale_color_manual(values=  my_cols, labels= desired_names,
-                    name= "Health status")+ 
+                     name= "Health status")+ 
+  scale_shape_manual(name= "Health status", labels=desired_names, values = c(15,16,17)) + 
   scale_linetype_manual(values= c("solid", "dashed"),labels = c("Natural \n regeneration", "Reforested"), name= "Origin")+
-  guides(color = guide_legend(order=1))+
   labs(x="Tree age (years)", y= "Tree height")+
   theme_bw()+ 
   theme(legend.key.size = unit(0.7, 'cm'),
@@ -1071,13 +1062,14 @@ fig5b
 g0<-ggplot(condition_model_all_C,aes(x=tree_nodes,y=tree_heigth))
 
 # method = "glm", method.args = list(family = Gamma(link = "log"))
-fig5c<-g0+geom_point(aes(colour=tree_health_simplified), alpha=0.5, size= 2.5)+
+fig5c<-g0+geom_point(aes(colour=tree_health_simplified,
+                         shape=tree_health_simplified), alpha=0.5, size= 2.5)+
     ylim(0,15)+
   geom_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), aes(color= tree_health_simplified,linetype = tree_exposition), fullrange =T)+
   scale_color_manual(values=  my_cols, labels= desired_names,
-                    name= "Health status")+ 
-  scale_linetype_manual(values= c("solid", "dashed"),labels = c("Nursed", "Exposed"), name= "Tree exposition",)+
-  guides(color = guide_legend(order=1))+
+                    name= "Health status")+
+  scale_shape_manual(name= "Health status", labels=desired_names, values = c(15,16,17)) + 
+  scale_linetype_manual(values= c("solid", "dashed"),labels = c("Nursed", "Exposed"), name= "Tree exposition",) +
   labs(x="Tree age (years)", y= "Tree height")+
   #stat_smooth(method = "glm", method.args = list(family = Gamma(link = "log")), se = TRUE)+
   theme_bw()+ 
