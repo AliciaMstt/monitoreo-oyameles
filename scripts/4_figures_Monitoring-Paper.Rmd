@@ -602,7 +602,7 @@ corrplot(contrib, is.cor = FALSE)
 
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(Rp_3a, NRp_3c, Rp_3b, NRp_3d, cols=2)
+multiplot(p_3a, NRp_3c, p_3b, NRp_3d, cols=2)
 ```
 
 ## Tabla contingencia ozone + other y combinados no ozono
@@ -713,7 +713,6 @@ condition_PO<-cond_PO%>%
 
 condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_percentage)
 
-
 # Plot
 p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
   ggplot(., aes(x = tree_nodes, fill = ozone_damage_percentage)) +
@@ -732,13 +731,15 @@ p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
                        values =c("none","none", "stripe", "none",
                                  "none", "none"),
                        labels = c("0%","less 10%", "10 to 40%", "40 to 50%",
-                                  "50 to 70%", "more 70%"))
+                                  "50 to 70%", "more 70%"))+
+  theme_bw()+ theme(text = element_text(size = 20)) 
 
 p_od
 
 p4_c <- p_od +
   labs(x="Tree age (years)", y= "Number of trees") +
   theme(legend.title.align = 0.5)+
+  theme(text = element_text(size = 20)) +
   theme(plot.title = element_text(lineheight=1.1))+
   ggtitle("c)")
 
@@ -874,6 +875,16 @@ multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
 ## Plot model all  data WITHOUT cohort
 
 ```{r, height=6, fig.width=10, message=FALSE}
+condition_model_all<-dplyr::select(muestreo_tidy, contains(c("tree_heigth","tree_nodes","tree_health_simplified", "reforested", "tree_exposition", "plot")))%>%
+  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other" )%>%
+  filter(tree_nodes < 15)
+
+# https://rpubs.com/dgolicher/ggplots2
+# https://stackoverflow.com/questions/46302410/how-to-specify-link-function-in-ggplot-glm-graph
+
+g0<-ggplot(condition_model_all,aes(x=tree_nodes,y=tree_heigth))
+
+# method = "glm", method.args = list(family = Gamma(link = "log"))
 fig5all<-g0+geom_point(aes(colour=tree_health_simplified, 
                            shape=tree_health_simplified), alpha=0.5, size= 2.5)+
   ylim(0,15)+
