@@ -375,13 +375,26 @@ oo_per_natreg<-condition_data%>%
   dplyr::filter(tree_health_simplified == "ozone_and_other")%>%
   group_by(plot) %>% 
   count(plot)
-oo_per$natreg<- oo_per_natreg$n
-oo_per$total<- oo_per_natreg+oo_per$reforested
+
+
+all_reforested  <- all_reforested %>% 
+  left_join(oo_per, by="plot")
+
+all_reforested  <- all_reforested %>% 
+  left_join(oo_per_natreg, by="plot")
+
 
 
 all_reforested$oo_per_ref<- (oo_per$reforested*100)/all_reforested$n
 all_reforested$oo_per_natreg<- (oo_per_natreg$n*100)/all_reforested$n
-  
+
+all_reforested  <- all_reforested %>% 
+  left_join(oo_per_natreg, by="plot")
+
+all_reforested  <- all_reforested %>% 
+  left_join(oo_per$reforested, by="plot")
+
+head(join)
 
 ```
 
