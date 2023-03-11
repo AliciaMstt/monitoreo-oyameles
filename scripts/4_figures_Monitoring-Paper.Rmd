@@ -27,6 +27,7 @@ library(chisq.posthoc.test)
 library(vcd)
 library(grid)
 library(ggpattern)
+library(car)
 ```
 
 Sampling data correspond to the data collected with kobo and previously cleaned with the script `1_preprocesamiento_datos_kobo.Rmd`.
@@ -392,7 +393,7 @@ ggsave("../outputs/Fig_2.png",
 
 #### Try a different approach
 
-## subset of data only with reforestatiton, health and exposition
+## subset of data only with reforestaiton, health and exposition
 refo_expo<-muestreo_tidy %>% 
               dplyr::select(plot, block, tree_health_simplified, reforested, tree_exposition) %>% 
            # discard other typos of damage
@@ -401,43 +402,39 @@ refo_expo<-muestreo_tidy %>%
                     tree_health_simplified == "ozone_and_other")
 
 
-### Summarise and estimate n and % by category
-
-## For Health
-summary_by_health<- refo_expo %>%  
-           group_by(plot, block, tree_health_simplified) %>% 
-            # count how many individuals there are in each category
-           summarise(n.health = n()) %>%
-           # create percentage within each plot (summing all rows of each plot = 1)
-           mutate(perc.health = n.health / sum(n.health)) 
+### Summarise and estimate n and % (normalized) by category
 
 ## By reforestation
 summary_by_ref<- refo_expo %>%  
-  group_by(plot, block, reforested) %>% 
+  group_by(plot, block, tree_health_simplified, reforested) %>% 
   # count how many individuals there are in each category
-  summarise(n.ref = n()) %>%
+  summarise(n = n()) %>%
   # create percentage within each plot (summing all rows of each plot = 1)
-  mutate(perc.ref = n.ref / sum(n.ref))
+  mutate(perc = n / sum(n)) %>%
+  # normalize it
+  mutate(perc.log = log(n / sum(n)))
 
 ## By exposition
 summary_by_exp<- refo_expo %>%  
-  group_by(plot, block, tree_exposition) %>% 
+  group_by(plot, block, tree_health_simplified, tree_exposition) %>% 
   # count how many individuals there are in each category
-  summarise(n.exp = n()) %>%
+  summarise(n = n()) %>%
   # create percentage within each plot (summing all rows of each plot = 1)
-  mutate(perc.exp = n.exp / sum(n.exp))
+  mutate(perc = n / sum(n)) %>%
+  # normalize it
+  mutate(perc.log = log(n / sum(n)))
 
-## Join 
+  
+### Perform Anova
+library(car)
 
-# Health and reforestation
-health_by_ref<-left_join(summary_by_health, summary_by_ref, 
-                          by=c("plot"= "plot", "block"="block"))
+# for reforestation
+Anova(lm(summary_by_ref$perc.log ~ summary_by_ref$tree_health_simplified * summary_by_ref$reforested + summary_by_ref$block))
 
-## Health and exposure
-health_by_exp<-left_join(summary_by_health, summary_by_exp, 
-                         by=c("plot"= "plot", "block"="block"))
 
-### Next: check tydiverse examples, we still dont have the variables we need. 
+# for exposition
+Anova(lm(summary_by_exp$perc.log ~ summary_by_exp$tree_health_simplified * summary_by_exp$tree_exposition + summary_by_exp$block))
+
 
 ```
 
