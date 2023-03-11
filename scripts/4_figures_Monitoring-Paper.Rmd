@@ -57,7 +57,6 @@ muestreo_tidy<-muestreo_tidy%>% mutate(Bloque = case_when(plot %in% c(1,2,3) ~1,
                  plot %in% c(46,47,48) ~16,
 ))
 
-
 parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
 
 # pivot long plots data to have health data as a single variable
@@ -351,9 +350,39 @@ ggsave("../outputs/Fig_2.png",
 
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
-condition_data<-dplyr::select(muestreo_tidy, contains(c("tree_heigth","tree_nodes","tree_health_simplified", "reforested", "tree_exposition", "plot", "bloque")))%>%
-  filter(tree_health_simplified == "healthy" | tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other" )%>%
-  filter(tree_nodes < 15)
+###################################
+condition_data<-dplyr::select(muestreo_tidy, contains(c("plot", "bloque","tree_health_simplified", "reforested")))%>%
+  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other")
+#0 es no y 1 en yes
+condition_data$reforested<-ifelse(condition_data$reforested=="yes",1,0)
+
+
+he_per<-condition_data%>%
+  dplyr::filter(tree_health_simplified == "healthy")%>%
+  group_by(plot) %>% 
+  summarise(reforested = sum(as.logical(reforested)))
+
+all_reforested<-condition_data%>%
+  group_by(plot)%>%
+  count()
+
+oo_per<-condition_data%>%
+  dplyr::filter(tree_health_simplified == "ozone_and_other")%>%
+  group_by(plot) %>% 
+  summarise(reforested = sum(as.logical(reforested)))
+
+oo_per_natreg<-condition_data%>%
+  dplyr::filter(tree_health_simplified == "ozone_and_other")%>%
+  group_by(plot) %>% 
+  count(plot)
+oo_per$natreg<- oo_per_natreg$n
+oo_per$total<- oo_per_natreg+oo_per$reforested
+
+
+all_reforested$oo_per_ref<- (oo_per$reforested*100)/all_reforested$n
+all_reforested$oo_per_natreg<- (oo_per_natreg$n*100)/all_reforested$n
+  
+
 ```
 
 
