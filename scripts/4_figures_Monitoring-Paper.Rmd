@@ -38,7 +38,7 @@ Sampling data correspond to the data collected with kobo and previously cleaned 
 muestreo_tidy<-read.delim("../data/kobo/muestreo_dic2020_tidy.txt", header = TRUE)
 
 #Add column block to muestreo_tidy
-muestreo_tidy<-muestreo_tidy%>% mutate(Bloque = case_when(plot %in% c(1,2,3) ~1,
+muestreo_tidy<-muestreo_tidy%>% mutate(block = case_when(plot %in% c(1,2,3) ~1,
                  plot %in% c(1,2,3) ~1,
                  plot %in% c(4,5,6) ~2,
                  plot %in% c(7,8,9) ~3,
@@ -54,8 +54,8 @@ muestreo_tidy<-muestreo_tidy%>% mutate(Bloque = case_when(plot %in% c(1,2,3) ~1,
                  plot %in% c(37,38,39) ~13,
                  plot %in% c(40,41,42) ~14,
                  plot %in% c(43,44,45) ~15,
-                 plot %in% c(46,47,48) ~16,
-))
+                 plot %in% c(46,47,48) ~16)) %>%
+                mutate(block=as.factor(block)) # store as factor, instead of numeric (numbers are IDs)
 
 parcelas_tidy<-read.delim("../data/kobo/parcelas_dic2020_tidy.txt", header = TRUE)
 
@@ -351,7 +351,7 @@ ggsave("../outputs/Fig_2.png",
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 ###################################
-condition_data<-dplyr::select(muestreo_tidy, contains(c("plot", "bloque","tree_health_simplified", "reforested")))%>%
+condition_data<-dplyr::select(muestreo_tidy, contains(c("plot", "block","tree_health_simplified", "reforested")))%>%
   filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other")
 #0 es no y 1 en yes
 condition_data$reforested<-ifelse(condition_data$reforested=="yes",1,0)
