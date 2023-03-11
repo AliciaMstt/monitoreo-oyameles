@@ -357,10 +357,7 @@ condition_data<-dplyr::select(muestreo_tidy, contains(c("plot", "bloque","tree_h
 condition_data$reforested<-ifelse(condition_data$reforested=="yes",1,0)
 
 
-he_per<-condition_data%>%
-  dplyr::filter(tree_health_simplified == "healthy")%>%
-  group_by(plot) %>% 
-  summarise(reforested = sum(as.logical(reforested)))
+
 
 all_reforested<-condition_data%>%
   group_by(plot)%>%
@@ -384,17 +381,16 @@ all_reforested  <- all_reforested %>%
   left_join(oo_per_natreg, by="plot")
 
 
-
 all_reforested$oo_per_ref<- (oo_per$reforested*100)/all_reforested$n
 all_reforested$oo_per_natreg<- (oo_per_natreg$n*100)/all_reforested$n
 
-all_reforested  <- all_reforested %>% 
-  left_join(oo_per_natreg, by="plot")
-
-all_reforested  <- all_reforested %>% 
-  left_join(oo_per$reforested, by="plot")
-
 head(join)
+
+# Repetir para healthy y ozono
+he_per<-condition_data%>%
+  dplyr::filter(tree_health_simplified == "healthy")%>%
+  group_by(plot) %>% 
+  summarise(reforested = sum(as.logical(reforested)))
 
 ```
 
