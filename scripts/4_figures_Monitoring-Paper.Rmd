@@ -1033,18 +1033,11 @@ condition_model_all_C<-dplyr::select(muestreo_tidy, contains(c("tree_heigth","tr
 
 ########################
 library(lme4)
-model<- glmer(tree_heigth ~ . + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
-summary(model)
-
-#### PLOT MODEL
-par(mfrow =c(2,2))
-plot(model)
-
 
 ########################
 
 # Model all independent variables WITH health status interaction 
-glm_1_coh<-glmer(tree_heigth ~ tree_nodes*tree_health_simplified*tree_exposition * reforested * tree_exposition + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
+glm_1_coh<-glm(tree_heigth ~ tree_nodes, data = condition_model_all_C, family = Gamma(link = "log"))
 summary(glm_1_coh)
 #### PLOT MODEL
 par(mfrow =c(2,2))
@@ -1052,7 +1045,7 @@ plot(glm_1_coh)
 
 ########################
 # Model all independent variables WITH health status interaction WITHOUT reforested data
-glm_2_coh<-glmer(tree_heigth ~ tree_nodes+tree_health_simplified + tree_exposition + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
+glm_2_coh<-glmer(tree_heigth ~ tree_nodes + tree_health_simplified + tree_exposition + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
 summary(glm_2_coh)
 #### PLOT MODEL
 par(mfrow =c(2,2))
@@ -1060,7 +1053,7 @@ plot(glm_2_coh)
 
 ########################
 # Model all independent variables WITH health status interaction WITHOUT tree exposition data
-glm_3_coh<-glmer(tree_heigth ~ tree_nodes+tree_health_simplified + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
+glm_3_coh<-glmer(tree_heigth ~ tree_nodes + tree_health_simplified + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
 summary(glm_3_coh)
 #### PLOT MODEL
 par(mfrow =c(2,2))
@@ -1085,32 +1078,36 @@ plot(glm_5_coh)
 
 
 ########################
-glm_6_coh<-glmer(tree_heigth ~ tree_nodes*tree_health_simplified*tree_exposition + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
+glm_6_coh<-glmer(tree_heigth ~ tree_nodes*tree_health_simplified + tree_exposition + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
 summary(glm_6_coh)
 #### PLOT MODEL
 par(mfrow =c(2,2))
 plot(glm_6_coh)
 
 ########################
-glm_7_coh<-glmer(tree_heigth ~ tree_nodes*tree_health_simplified + reforested + tree_exposition + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
+glm_7_coh<-glmer(tree_heigth ~ tree_nodes*tree_health_simplified + tree_exposition + reforested + (1|plot), data = condition_model_all_C, family = Gamma(link = "log"))
 summary(glm_7_coh)
 #### PLOT MODEL
 par(mfrow =c(2,2))
 plot(glm_7_coh)
 
+########################
+# Model all independent variables WITH health status interaction WITHOUT reforested data
+glm_8_coh<-glm(tree_heigth ~ tree_nodes + tree_health_simplified + tree_exposition + reforested, data = condition_model_all_C, family = Gamma(link = "log"))
+summary(glm_8_coh)
+#### PLOT MODEL
+par(mfrow =c(2,2))
+plot(glm_8_coh)
+
 
 # Choose better model
-AIC(model,glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh)
+AIC(glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh, glm_8_coh)
 
 
 ######
 library(forestmodel)
 coef(glm_2_coh)
 summary(glm_2_coh)
-
-library(jtools)
-summ(glm_2_coh, exp = T, confint = T)
-#forestmodel::forest_model(glm_2_coh)
 
 ```
 
