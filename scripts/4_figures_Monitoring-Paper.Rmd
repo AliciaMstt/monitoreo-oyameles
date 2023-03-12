@@ -1113,6 +1113,7 @@ summary(glm_2_coh)
 
 ## Fig 5a: Plot model aLL data  with cohort
 
+
 ```{r, height=6, fig.width=10, message=FALSE}
 #
 # https://rpubs.com/dgolicher/ggplots2
