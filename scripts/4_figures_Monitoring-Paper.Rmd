@@ -827,6 +827,10 @@ condition_PO<-cond_PO%>%
 
 condition_PO$ozone_damage_percentage <- as.factor(condition_PO$ozone_damage_percentage)
 
+library(sf)
+library(ggpattern)
+library(magrittr)
+library(ggplot2)
 # Plot
 p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
   ggplot(., aes(x = tree_nodes, fill = ozone_damage_percentage)) +
@@ -848,8 +852,8 @@ p_od<- condition_PO %>% filter(!is.na(ozone_damage_percentage)) %>%
                                   "50 to 70%", "more 70%"))+
   theme_bw()+ theme(text = element_text(size = 20)) 
 
-p_od
 
+p_od
 p4_c <- p_od +
   labs(x="Tree age (years)", y= "Number of trees") +
   theme(legend.title.align = 0.5)+
@@ -1108,6 +1112,15 @@ AIC(glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh, g
 library(forestmodel)
 coef(glm_2_coh)
 summary(glm_2_coh)
+
+## Report glmer
+library(MuMIn)
+#install.packages("bruceR", dep=TRUE)
+library(bruceR)
+library(lmerTest)
+
+print_table(glm_2_coh)
+model_summary(glm_2_coh)
 
 ```
 
