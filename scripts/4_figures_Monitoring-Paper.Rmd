@@ -394,11 +394,12 @@ Anova(lm(summary_by_ref$perc.log ~ summary_by_ref$tree_health_simplified * summa
 Anova(lm(summary_by_exp$perc.log ~ summary_by_exp$tree_health_simplified * summary_by_exp$tree_exposition + summary_by_exp$block))
 
 
+
 ```
 
 
 
-## Figure 3a y b Reforested
+## Figure 3a Reforested
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
@@ -432,42 +433,6 @@ p_3a<-ggplot(cont_tab, aes(reforested, ..count..) ) +
   theme(plot.title = element_text(lineheight=1.1))+
   labs(y="Number of trees", x= "Origin")
 p_3a
-  
-# Mosaic Plot with vcd library
-library(vcd)
-p_3b<-mosaic(tab_reforested, shade=TRUE, legend=TRUE,
-            labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Chi2
-chisq <- chisq.test(tab_reforested)
-chisq
-
-Contingency <- function(x) {
-    chi <- chisq.test(x)
-    unname(sqrt(chi$statistic / (chi$statistic + sum(x))))
-}
-
-Contingency(tab_reforested)
-
-# Observed counts
-chisq$observed
-
-# Expected counts
-round(chisq$expected,2)
-
-# Pearson residuals (residuos estandarizados)
-round(chisq$residuals, 3)
-
-# Visuaalize Pearson residuals
-library(corrplot)
-corrplot(chisq$residuals, is.cor = FALSE)
-
-# Contibution in percentage (%)
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-
-# Visualize the contribution
-corrplot(contrib, is.cor = FALSE)
 
 ```
 
