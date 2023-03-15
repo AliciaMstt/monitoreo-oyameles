@@ -352,47 +352,6 @@ ggsave("../outputs/Fig_2.png",
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
-####### Codigo Vero Examine percentage of ozone damage by  plot and category reforested/natural exposed/covered
-# condition_data<-dplyr::select(muestreo_tidy, contains(c("plot", "block","tree_health_simplified", "reforested")))%>%
-#   filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" |tree_health_simplified == "ozone_and_other")
-# #0 es no y 1 en yes
-# condition_data$reforested<-ifelse(condition_data$reforested=="yes",1,0)
-# 
-# all_reforested<-condition_data%>%
-#   group_by(plot)%>%
-#   count()
-# 
-# oo_per<-condition_data%>%
-#   dplyr::filter(tree_health_simplified == "ozone_and_other")%>%
-#   group_by(plot) %>% 
-#   summarise(reforested = sum(as.logical(reforested)))
-# 
-# oo_per_natreg<-condition_data%>%
-#   dplyr::filter(tree_health_simplified == "ozone_and_other")%>%
-#   group_by(plot) %>% 
-#   count(plot)
-# 
-# 
-# all_reforested  <- all_reforested %>% 
-#   left_join(oo_per, by="plot")
-# 
-# all_reforested  <- all_reforested %>% 
-#   left_join(oo_per_natreg, by="plot")
-# 
-# 
-# all_reforested$oo_per_ref<- (oo_per$reforested*100)/all_reforested$n
-# all_reforested$oo_per_natreg<- (oo_per_natreg$n*100)/all_reforested$n
-# 
-# head(join)
-# 
-# # Repetir para healthy y ozono
-# he_per<-condition_data%>%
-#   dplyr::filter(tree_health_simplified == "healthy")%>%
-#   group_by(plot) %>% 
-#   summarise(reforested = sum(as.logical(reforested)))
-
-#### Try a different approach
-
 ## subset of data only with reforestaiton, health and exposition
 refo_expo<-muestreo_tidy %>% 
               dplyr::select(plot, block, tree_health_simplified, reforested, tree_exposition) %>% 
@@ -1110,15 +1069,12 @@ AIC(glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh, g
 
 ######
 library(forestmodel)
-coef(glm_2_coh)
 summary(glm_2_coh)
 
 ## Report glmer
-library(MuMIn)
-#install.packages("bruceR", dep=TRUE)
-library(bruceR)
-library(lmerTest)
 
+library(lmerTest)
+HLM_summary(glm_2_coh)
 print_table(glm_2_coh)
 model_summary(glm_2_coh)
 
