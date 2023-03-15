@@ -469,7 +469,11 @@ p_3c
 ## Multiplot
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p_3a, p_3c, cols=1)
+
+library("gridExtra")
+library("cowplot")
+plot_grid(p_3a, p_3c, ncol = 2, nrow = 1)
+
 ```
 
 ## Figure 3c y d only reforested trees
@@ -561,7 +565,7 @@ NRp_3c
 ```{r, message=FALSE, fig.height=12, fig.width=16}
 library("gridExtra")
 library("cowplot")
-plot_grid(p_3a, NRp_3c, ncol = 2, nrow = 1)
+plot_grid(Rp_3a, NRp_3c, ncol = 2, nrow = 1)
 
 ```
 
