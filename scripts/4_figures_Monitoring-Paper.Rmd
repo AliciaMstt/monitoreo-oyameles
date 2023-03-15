@@ -512,33 +512,6 @@ Rp_3a<-ggplot(cont_tab_2, aes(tree_exposition, ..count..)) +
   labs(y="Number of trees", x= "Tree exposition")
   
 Rp_3a
-# Mosaic Plot with vcd library
-Rp_3b <- mosaic(tab_covered_2, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Chi2
-chisq <- chisq.test(tab_covered_2)
-chisq
-
-# Observed counts
-chisq$observed
-
-# Expected counts
-round(chisq$expected,2)
-
-# Pearson residuals (residuos estandarizados)
-round(chisq$residuals, 3)
-
-# Visuaalize Pearson residuals
-corrplot(chisq$residuals, is.cor = FALSE)
-
-# Contibution in percentage (%)
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-
-# Visualize the contribution
-library(corrplot)
-corrplot(contrib, is.cor = FALSE)
-
 ```
 
 ## Figure 3c y d NO reforested trees
@@ -577,43 +550,16 @@ NRp_3c<-ggplot(cont_tab_3, aes(tree_exposition, ..count..)) +
                     values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
                     labels= c("healthy", "ozone","ozone and other"))+
   theme_bw()+ 
-  ggtitle("c)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
+  ggtitle("b)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
   theme(plot.title = element_text(lineheight=1.1, face="plain"))+
   labs(y="Number of trees", x= "Tree exposition")
   
 NRp_3c
-# Mosaic Plot with vcd library
-NRp_3d <- mosaic(tab_covered_3, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Chi2
-chisq <- chisq.test(tab_covered_3)
-chisq
-
-# Observed counts
-chisq$observed
-
-# Expected counts
-round(chisq$expected,2)
-
-# Pearson residuals (residuos estandarizados)
-round(chisq$residuals, 3)
-
-# Visuaalize Pearson residuals
-corrplot(chisq$residuals, is.cor = FALSE)
-
-# Contibution in percentage (%)
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-
-# Visualize the contribution
-library(corrplot)
-corrplot(contrib, is.cor = FALSE)
-
 ```
 
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p_3a, NRp_3c, p_3b, NRp_3d, cols=2)
+multiplot(p_3a, NRp_3c)
 ```
 
 ## Tabla contingencia ozone + other y combinados no ozono
