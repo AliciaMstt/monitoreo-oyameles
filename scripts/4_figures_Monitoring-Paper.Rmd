@@ -436,7 +436,7 @@ p_3a
 
 ```
 
-## Figure 3c y d Covered with reforested and natural regeneration
+## Figure 3b Covered with reforested and natural regeneration
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
@@ -458,44 +458,18 @@ p_3c<-ggplot(cont_tab, aes(tree_exposition, ..count..)) +
   scale_x_discrete(breaks = c("cover", "exposed"),labels = c("Nursed", "Exposed"))+
   scale_fill_manual(name ="Health status",values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), labels= c("healthy", "ozone","ozone and other"))+
   theme_bw()+ 
-  ggtitle("c)")+theme(legend.title.align = 0.5)+
+  ggtitle("b)")+theme(legend.title.align = 0.5)+
   theme(text = element_text(size = 20))+ 
   theme(plot.title = element_text(lineheight=1.1, face="plain"))+
   labs(y="Number of trees", x= "Tree exposition")
 p_3c
-# Mosaic Plot with vcd library
-p_3d <- mosaic(tab_covered, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Chi2
-chisq <- chisq.test(tab_covered)
-chisq
-
-# Observed counts
-chisq$observed
-
-# Expected counts
-round(chisq$expected,2)
-
-# Pearson residuals (residuos estandarizados)
-round(chisq$residuals, 3)
-
-# Visuaalize Pearson residuals
-corrplot(chisq$residuals, is.cor = FALSE)
-
-# Contibution in percentage (%)
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-
-# Visualize the contribution
-library(corrplot)
-corrplot(contrib, is.cor = FALSE)
 
 ```
 
 ## Multiplot
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p_3a, p_3b, p_3c, p_3d, cols=2)
+multiplot(p_3a, p_3c, cols=1)
 ```
 
 ## Figure 3c y d only reforested trees
