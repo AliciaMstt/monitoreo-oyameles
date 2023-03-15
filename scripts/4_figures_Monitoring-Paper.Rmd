@@ -599,33 +599,6 @@ p_3c<-ggplot(cont_tab_4, aes(tree_exposition, ..count..)) +
   labs(y="Number of trees", x= "Tree exposition")
   
 p_3c
-# Mosaic Plot with vcd library
-p_3d <- mosaic(tab_covered_4, shade=TRUE, legend=TRUE, labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
-
-# Chi2
-chisq <- chisq.test(tab_covered_4)
-chisq
-
-# Observed counts
-chisq$observed
-
-# Expected counts
-round(chisq$expected,2)
-
-# Pearson residuals (residuos estandarizados)
-round(chisq$residuals, 3)
-
-# Visuaalize Pearson residuals
-corrplot(chisq$residuals, is.cor = FALSE)
-
-# Contibution in percentage (%)
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-
-# Visualize the contribution
-library(corrplot)
-corrplot(contrib, is.cor = FALSE)
-
 ```
 
 # Figure 4
