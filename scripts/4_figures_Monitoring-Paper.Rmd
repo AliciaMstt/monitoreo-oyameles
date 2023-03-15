@@ -352,14 +352,13 @@ ggsave("../outputs/Fig_2.png",
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
 
-## subset of data only with reforestaiton, health and exposition
+## subset of data only with reforestation, health and exposition
 refo_expo<-muestreo_tidy %>% 
               dplyr::select(plot, block, tree_health_simplified, reforested, tree_exposition) %>% 
            # discard other typos of damage
              filter(tree_health_simplified == "healthy" |
                     tree_health_simplified == "ozone" |
                     tree_health_simplified == "ozone_and_other")
-
 
 ### Summarise and estimate n and % (normalized) by category
 
@@ -435,6 +434,7 @@ p_3a<-ggplot(cont_tab, aes(reforested, ..count..) ) +
 p_3a
   
 # Mosaic Plot with vcd library
+library(vcd)
 p_3b<-mosaic(tab_reforested, shade=TRUE, legend=TRUE,
             labeling_args=list(rot_labels=c(bottom=90,top=0),gp_labels=(gpar(fontsize=12))))
 
@@ -1072,6 +1072,10 @@ library(forestmodel)
 summary(glm_2_coh)
 
 ## Report glmer
+```
+
+# Figure S11
+```{r, height=6, fig.width=10, message=FALSE}
 
 library(lmerTest)
 HLM_summary(glm_2_coh)
@@ -1207,7 +1211,7 @@ p_d
 
 ```
 
-# Figure S11
+# Figure S12
 
 ```{r, height=20, fig.width=20, message=FALSE}
 # plot pies in map
@@ -1227,7 +1231,7 @@ p_satmap +geom_scatterpie(data=parcelas_tidy,
 
 ```
 
-# Figure S12
+# Figure S13
 
 ```{r, height=6, fig.width=6, message=FALSE}
 # Create new variable with percentage of ozone damage
