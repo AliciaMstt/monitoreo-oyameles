@@ -559,7 +559,10 @@ NRp_3c
 
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p_3a, NRp_3c)
+library("gridExtra")
+library("cowplot")
+plot_grid(p_3a, NRp_3c, ncol = 2, nrow = 1)
+
 ```
 
 ## Tabla contingencia ozone + other y combinados no ozono
@@ -936,7 +939,7 @@ summary(glm_2_coh)
 ```{r, height=6, fig.width=10, message=FALSE}
 
 library(lmerTest)
-HLM_summary(glm_2_coh)
+library(bruceR)
 print_table(glm_2_coh)
 model_summary(glm_2_coh)
 
