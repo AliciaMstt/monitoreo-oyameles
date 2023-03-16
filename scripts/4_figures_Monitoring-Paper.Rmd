@@ -402,11 +402,11 @@ head(summary_by_both)
 library(car)
 
 # for reforestation
-Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
+#Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
 
 
 # for exposition
-Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
+#Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
 
 ##### TWO WAY ANOVA By BOTH exposition and tree origin 
 
@@ -469,44 +469,6 @@ p3<- ggplot(summary_by_both, aes(x = factor(tree_exposition),
 
 p3
 
-```
-
-## Tabla contingencia ozone + other y combinados no ozono
-
-```{r, fig.height=6, fig.width=6, message=FALSE}
-
-# Select tree reforested and covered data 
-cont_tab_4<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>% filter(tree_health_simplified == "ozone_and_other"| tree_health_simplified == "others_combined" )%>%
-  filter(reforested== "yes")                                            
-
-count(cont_tab_4)
-table(cont_tab_4)
-
-
-
-tab_covered_4<- as.table(array(c(sum(with(cont_tab_4, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
-                sum(with(cont_tab_4, tree_health_simplified == "others_combined" & tree_exposition == "cover")),
-                sum(with(cont_tab_4, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed")),
-                sum(with(cont_tab_4, tree_health_simplified == "others_combined" & tree_exposition == "exposed"))),
-             dim=c(2,2), dimnames=list( c("ozone_and_other", "others_combined"), c("cover", "exposed"))))
-
-colnames(tab_covered_4)<- c("nursed","exposed")
-names(attributes(tab_covered_3)$dimnames) <- c("Health status", "Tree exposition")
-
-#Barplot
-p_3c<-ggplot(cont_tab_4, aes(tree_exposition, ..count..)) +
-  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_x_discrete(breaks = c("cover", "exposed"),
-                   labels = c("Nursed", "Exposed"))+
-  scale_fill_manual(name ="Health status", 
-                    values = c("ozone_and_other" = "orangered1", "others_combined" = "cadetblue"), 
-                    labels= c("ozone and other", "others combined"))+
-  theme_bw()+ 
-  ggtitle(" ")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
-  labs(y="Number of trees", x= "Tree exposition")
-  
-p_3c
 ```
 
 # Figure 4
