@@ -358,40 +358,64 @@ refo_expo<-muestreo_tidy %>%
            # discard other typos of damage
              filter(tree_health_simplified == "healthy" |
                     tree_health_simplified == "ozone" |
-                    tree_health_simplified == "ozone_and_other")
+                    tree_health_simplified == "ozone_and_other") %>% 
+          # make "ozone" and "ozone and other" a single category = damaged
+             mutate(tree_health_simplified = replace(tree_health_simplified, tree_health_simplified == "ozone", "damaged")) %>% 
+             mutate(tree_health_simplified = replace(tree_health_simplified, tree_health_simplified == "ozone_and_other", "damaged"))
+      
 
-### Summarise and estimate n and % (normalized) by category
+### Summarise and estimate n and % of DAMAGED trees (normalized) by category and plot
 
 ## By reforestation
 summary_by_ref<- refo_expo %>%  
-  group_by(plot, block, tree_health_simplified, reforested) %>% 
+  group_by(plot, block, reforested, tree_health_simplified) %>% 
   # count how many individuals there are in each category
   summarise(n = n()) %>%
-  # create percentage within each plot (summing all rows of each plot = 1)
+  # create percentage within each plot
   mutate(perc = n / sum(n)) %>%
   # normalize it
-  mutate(perc.log = log(n / sum(n)))
+  mutate(perc.damage.log = log(n / sum(n)))
+
+# the percentage of healthy and damaged trees for each reforested yes/no category is shown. The sum of healthy/damaged by ref category sums 1.
+head(summary_by_ref) 
+
+# Next we need to remove the "healthy rows" (we only need the % of damage, not the % of healthy)
+summary_by_ref<-summary_by_ref %>%
+  filter(tree_health_simplified == "damaged")
+
+head(summary_by_ref) # the percentage of damaged trees by each reforestation category is shown
 
 ## By exposition
 summary_by_exp<- refo_expo %>%  
-  group_by(plot, block, tree_health_simplified, tree_exposition) %>% 
+  group_by(plot, block, tree_exposition, tree_health_simplified) %>% 
   # count how many individuals there are in each category
   summarise(n = n()) %>%
   # create percentage within each plot (summing all rows of each plot = 1)
   mutate(perc = n / sum(n)) %>%
   # normalize it
-  mutate(perc.log = log(n / sum(n)))
+  mutate(perc.damage.log = log(n / sum(n)))
 
-  
+# the percentage of healthy and damaged trees for each exposed covered/exposed category is shown. The sum of healthy/damaged by category sums 1.
+head(summary_by_exp) 
+
+# Next we need to remove the "healthy rows" (we only need the % of damage, not the % of healthy)
+summary_by_exp<-summary_by_exp %>%
+  filter(tree_health_simplified == "damaged")
+
+head(summary_by_exp) # the percentage of damaged trees by each reforestation category is shown
+
+# The percentages dont sum 1 because we are only looking at the % of damaged trees by category, NOT to the % of healthy trees.
+
+
 ### Perform Anova
 library(car)
 
 # for reforestation
-Anova(lm(summary_by_ref$perc.log ~ summary_by_ref$tree_health_simplified * summary_by_ref$reforested + summary_by_ref$block))
+Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
 
 
 # for exposition
-Anova(lm(summary_by_exp$perc.log ~ summary_by_exp$tree_health_simplified * summary_by_exp$tree_exposition + summary_by_exp$block))
+Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
 
 
 
