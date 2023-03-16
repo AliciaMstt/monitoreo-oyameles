@@ -801,6 +801,8 @@ AIC(glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh, g
 ######
 library(forestmodel)
 summary(glm_2_coh)
+r2(glm_2_coh)
+model_performance(glm_2_coh)
 
 ## Report glmer
 ```
