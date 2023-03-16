@@ -441,10 +441,13 @@ summary_by_both<-summary_by_both %>%
 
 head(summary_by_both) 
 
+```
+
+# Figure S10
+
+```{r}
 ### TWO-way ANOVA
-
 Anova(lm(summary_by_both$perc.damage.log ~ summary_by_both$tree_exposition * summary_by_both$reforested + summary_by_both$block))
-
 
 ```
 
