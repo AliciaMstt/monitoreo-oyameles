@@ -28,6 +28,8 @@ library(vcd)
 library(grid)
 library(ggpattern)
 library(car)
+library(gridExtra)
+library(cowplot)
 ```
 
 Sampling data correspond to the data collected with kobo and previously cleaned with the script `1_preprocesamiento_datos_kobo.Rmd`.
@@ -347,10 +349,10 @@ ggsave("../outputs/Fig_2.png",
        dpi = 600)
 ```
 
-# ANOVA OF Figure 3
+# ANOVAs related to  Figure 3
 
 One-way ANOVAS and 2-way ANOVA
-```{r, fig.height=6, fig.width=6, message=FALSE}
+```{r}
 
 ## subset of data only with reforestation, health and exposition
 refo_expo<-muestreo_tidy %>% 
@@ -398,7 +400,6 @@ head(summary_by_both)
 
 ### TWO-way ANOVA
 library(car)
-<<<<<<< HEAD
 
 # for reforestation
 Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
@@ -448,181 +449,31 @@ Anova(lm(summary_by_both$perc.damage.log ~ summary_by_both$tree_exposition * sum
 ```
 
 
+## Figure 3 Boxplot of data used for ANOVA
 
-## Figure 3a Reforested
+```{r, fig.height=4, fig.width=4, message=FALSE}
 
-```{r, fig.height=6, fig.width=6, message=FALSE}
-
-# Select tree reforested and covered data 
-cont_tab<- dplyr::select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
-  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")
-
-table(cont_tab)
-
-tab_reforested<- as.table(array(c(sum(with(cont_tab, 
-                tree_health_simplified == "healthy" & reforested == "yes")),
-                sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "yes")),
-                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "yes")),
-                sum(with(cont_tab, tree_health_simplified == "healthy" & reforested == "no")),
-                sum(with(cont_tab, tree_health_simplified == "ozone" & reforested == "no")),
-                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & reforested == "no"))),
-                dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("yes","no"))))
-
-colnames(tab_reforested)<- c("reforested","naturally regeneration")
-
-
-names(attributes(tab_reforested)$dimnames) <- c("Health status", "Origin")
-
-# Barplot
-p_3a<-ggplot(cont_tab, aes(reforested, ..count..) ) +
-  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_x_discrete(breaks = c("no", "yes"),labels = c("Natural \n regeneration", "Reforested"))+
-  scale_fill_manual(name ="Health status", values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"),labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+ ggtitle("a)")+ theme(legend.title.align = 0.5)+ 
-  theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1))+
-  labs(y="Number of trees", x= "Origin")
-p_3a
-
-```
-
-## Figure 3b Covered with reforested and natural regeneration
-
-```{r, fig.height=6, fig.width=6, message=FALSE}
-
-tab_covered<- as.table(array(c(sum(with(cont_tab, tree_health_simplified == "healthy" & tree_exposition == "cover")),
-                sum(with(cont_tab, tree_health_simplified == "ozone" & tree_exposition == "cover")),
-                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
-                sum(with(cont_tab, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
-                sum(with(cont_tab, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
-                sum(with(cont_tab, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
-             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
-
-colnames(tab_covered)<- c("nursed","exposed")
-names(attributes(tab_covered)$dimnames) <- c("Health status", "Tree exposition")
-
-#Barplot
-
-p_3c<-ggplot(cont_tab, aes(tree_exposition, ..count..)) +
-  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_x_discrete(breaks = c("cover", "exposed"),labels = c("Nursed", "Exposed"))+
-  scale_fill_manual(name ="Health status",values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), labels= c("healthy", "ozone","ozone and other"))+
+# Boxplot tree expostion and reforestation origin on percentage of damage
+p3<- ggplot(summary_by_both, aes(x = factor(tree_exposition), 
+                                 y = perc.damage.log, color = factor(reforested))) +
+  geom_boxplot() +
+  ylab("Log-transformed percentage of damage by plot") +
+  scale_color_manual(name= "Tree origin",
+                     breaks = c("no", "yes"),
+                     labels = c("Natural", "Reforested"),
+                     values=c("#b94b75", "#bb7438")) + # nice colour blind colors
+  scale_x_discrete(name="Tree exposition",
+                   breaks = c("cover", "exposed"),labels = c("Nursed", "Exposed")) + 
   theme_bw()+ 
-  ggtitle("b)")+theme(legend.title.align = 0.5)+
-  theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
-  labs(y="Number of trees", x= "Tree exposition")
-p_3c
+  theme(text = element_text(size = 20))
 
-```
-
-## Multiplot
-
-```{r, message=FALSE, fig.height=12, fig.width=16}
-
-library("gridExtra")
-library("cowplot")
-plot_grid(p_3a, p_3c, ncol = 2, nrow = 1)
-
-```
-
-## Figure 3c y d only reforested trees
-
-```{r, fig.height=6, fig.width=6, message=FALSE}
-
-
-# Select tree reforested and covered data 
-cont_tab_2<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
-  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")%>%
-  filter(reforested== "yes")
-count(cont_tab_2)
-count(cont_tab)
-table(cont_tab_2)
-
-
-
-tab_covered_2<- as.table(array(c(sum(with(cont_tab_2, tree_health_simplified == "healthy" & tree_exposition == "cover")),
-                sum(with(cont_tab_2, tree_health_simplified == "ozone" & tree_exposition == "cover")),
-                sum(with(cont_tab_2, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
-                sum(with(cont_tab_2, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
-                sum(with(cont_tab_2, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
-                sum(with(cont_tab_2, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
-             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
-
-colnames(tab_covered_2)<- c("nursed","exposed")
-names(attributes(tab_covered_2)$dimnames) <- c("Health status", "Tree exposition")
-
-#Barplot
-Rp_3a<-ggplot(cont_tab_2, aes(tree_exposition, ..count..)) +
-  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_x_discrete(breaks = c("cover", "exposed"),
-                   labels = c("Nursed", "Exposed"))+
-  scale_fill_manual(name ="Health status", 
-                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
-                    labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+ 
-  ggtitle("a)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
-  labs(y="Number of trees", x= "Tree exposition")
-  
-Rp_3a
-```
-
-## Figure 3c y d NO reforested trees
-
-```{r, fig.height=6, fig.width=6, message=FALSE}
-
-
-# Select tree reforested and covered data 
-cont_tab_3<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>%
-  filter(tree_health_simplified == "healthy"| tree_health_simplified == "ozone" | tree_health_simplified == "ozone_and_other")%>%
-  filter(reforested== "no")
-count(cont_tab_3)
-count(cont_tab)
-table(cont_tab_3)
-
-
-
-
-tab_covered_3<- as.table(array(c(sum(with(cont_tab_3, tree_health_simplified == "healthy" & tree_exposition == "cover")),
-                sum(with(cont_tab_3, tree_health_simplified == "ozone" & tree_exposition == "cover")),
-                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & tree_exposition == "cover")),
-                sum(with(cont_tab_3, tree_health_simplified == "healthy" & tree_exposition == "exposed")),
-                sum(with(cont_tab_3, tree_health_simplified == "ozone" & tree_exposition == "exposed")),
-                sum(with(cont_tab_3, tree_health_simplified == "ozone_and_other" & tree_exposition == "exposed"))),
-             dim=c(3,2), dimnames=list( c("healthy","ozone","ozone and other"), c("cover", "exposed"))))
-
-colnames(tab_covered_3)<- c("nursed","exposed")
-names(attributes(tab_covered_3)$dimnames) <- c("Health status", "Tree exposition")
-
-#Barplot
-NRp_3c<-ggplot(cont_tab_3, aes(tree_exposition, ..count..)) +
-  geom_bar(aes(fill = tree_health_simplified), position = "dodge")+
-  scale_x_discrete(breaks = c("cover", "exposed"),
-                   labels = c("Nursed", "Exposed"))+
-  scale_fill_manual(name ="Health status", 
-                    values = c("healthy" = "darkgreen", "ozone" = "darkred", "ozone_and_other" = "orangered1"), 
-                    labels= c("healthy", "ozone","ozone and other"))+
-  theme_bw()+ 
-  ggtitle("b)")+theme(legend.title.align = 0.5)+theme(text = element_text(size = 20))+ 
-  theme(plot.title = element_text(lineheight=1.1, face="plain"))+
-  labs(y="Number of trees", x= "Tree exposition")
-  
-NRp_3c
-```
-
-
-```{r, message=FALSE, fig.height=12, fig.width=16}
-library("gridExtra")
-library("cowplot")
-plot_grid(Rp_3a, NRp_3c, ncol = 2, nrow = 1)
+p3
 
 ```
 
 ## Tabla contingencia ozone + other y combinados no ozono
 
 ```{r, fig.height=6, fig.width=6, message=FALSE}
-
 
 # Select tree reforested and covered data 
 cont_tab_4<- select(muestreo_tidy, contains(c("tree_health_simplified", "reforested", "tree_exposition"))) %>% filter(tree_health_simplified == "ozone_and_other"| tree_health_simplified == "others_combined" )%>%
