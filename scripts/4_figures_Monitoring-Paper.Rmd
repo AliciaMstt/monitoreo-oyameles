@@ -464,7 +464,7 @@ p3<- ggplot(summary_by_both, aes(x = factor(tree_exposition),
   scale_color_manual(name= "Tree origin",
                      breaks = c("no", "yes"),
                      labels = c("Natural", "Reforested"),
-                     values=c("#b94b75", "#bb7438")) + # nice colour blind colors
+                     values=c("#9f964b", "#9a5ea1")) + # nice colour blind colors
   scale_x_discrete(name="Tree exposition",
                    breaks = c("cover", "exposed"),labels = c("Nursed", "Exposed")) + 
   theme_bw()+ 
@@ -799,7 +799,9 @@ AIC(glm_1_coh,glm_2_coh,glm_3_coh, glm_4_coh, glm_5_coh, glm_6_coh, glm_7_coh, g
 
 
 ######
-library(forestmodel)
+library(sjmisc)
+library(lmerTest)
+library(bruceR)
 summary(glm_2_coh)
 r2(glm_2_coh)
 model_performance(glm_2_coh)
@@ -810,8 +812,7 @@ model_performance(glm_2_coh)
 # Figure S11
 ```{r, height=6, fig.width=10, message=FALSE}
 
-library(lmerTest)
-library(bruceR)
+
 print_table(glm_2_coh)
 model_summary(glm_2_coh)
 
