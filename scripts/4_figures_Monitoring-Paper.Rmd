@@ -354,7 +354,7 @@ ggsave("../outputs/Fig_2.png",
 One-way ANOVAS and 2-way ANOVA
 ```{r}
 
-## subset of data only with reforestation, health and exposition
+#### subset of data only with reforestation, health and exposition
 refo_expo<-muestreo_tidy %>% 
               dplyr::select(plot, block, tree_health_simplified, reforested, tree_exposition) %>% 
            # discard other typos of damage
@@ -365,6 +365,83 @@ refo_expo<-muestreo_tidy %>%
              mutate(tree_health_simplified = replace(tree_health_simplified, tree_health_simplified == "ozone", "damaged")) %>% 
              mutate(tree_health_simplified = replace(tree_health_simplified, tree_health_simplified == "ozone_and_other", "damaged"))
       
+
+
+### ONE-way ANOVA
+library(car)
+
+#### By reforestation
+summary_by_ref<- refo_expo %>%  
+  group_by(plot, block, reforested, tree_health_simplified) %>% 
+  # count how many individuals there are in each category
+  summarise(n = n())
+
+#now we have n for each category
+head(summary_by_ref)
+
+# Calculate percentage by group and plot ((summing all rows of each plot = 1)
+summary_by_ref<-transform(summary_by_ref, 
+                           perc.damage = ave(n,
+                                      plot,
+                                      FUN = prop.table))  %>% 
+                      
+ # normalize it
+  mutate(perc.damage.log = log(perc.damage))
+
+# the percentage of healthy and damaged trees for each exposed covered/exposed category is shown. 
+head(summary_by_ref) 
+
+# Next we need to remove the "healthy rows" (we only need the % of damage, not the % of healthy)
+summary_by_ref<-summary_by_ref %>%
+  filter(tree_health_simplified == "damaged") %>%
+  select(-tree_health_simplified) # this column is not needed anymore
+
+# The percentages now don't sum 1 because we are only looking at the % of damaged trees by category, NOT to the % of healthy trees. This is OK
+
+
+
+
+
+## By exposition
+summary_by_exp<- refo_expo %>%  
+  group_by(plot, block, tree_exposition,  tree_health_simplified) %>% 
+  # count how many individuals there are in each category
+  summarise(n = n())
+
+#now we have n for each category
+head(summary_by_exp)
+
+# Calculate percentage by group and plot ((summing all rows of each plot = 1)
+summary_by_exp<-transform(summary_by_exp, 
+                           perc.damage = ave(n,
+                                      plot,
+                                      FUN = prop.table))  %>% 
+                      
+ # normalize it
+  mutate(perc.damage.log = log(perc.damage))
+
+# the percentage of healthy and damaged trees for each exposed covered/exposed category is shown. 
+head(summary_by_exp) 
+
+# Next we need to remove the "healthy rows" (we only need the % of damage, not the % of healthy)
+summary_by_exp<-summary_by_exp %>%
+  filter(tree_health_simplified == "damaged") %>%
+  select(-tree_health_simplified) # this column is not needed anymore
+
+
+
+#### One way ANOVAS
+
+# for reforestation
+Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
+
+
+# for exposition
+Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
+
+
+
+#### For TWO-way ANOVA
 
 ### Summarise and estimate n and % of DAMAGED trees (normalized) by category and plot
 
@@ -397,16 +474,6 @@ summary_by_both<-summary_by_both %>%
 # The percentages now don't sum 1 because we are only looking at the % of damaged trees by category, NOT to the % of healthy trees. This is OK
 
 head(summary_by_both) 
-
-### ONE-way ANOVA
-library(car)
-
-# for reforestation
-Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
-
-
-# for exposition
-Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
 
 ##### TWO WAY ANOVA By BOTH exposition and tree origin 
 
