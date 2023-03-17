@@ -398,15 +398,15 @@ summary_by_both<-summary_by_both %>%
 
 head(summary_by_both) 
 
-### TWO-way ANOVA
+### ONE-way ANOVA
 library(car)
 
 # for reforestation
-#Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
+Anova(lm(summary_by_ref$perc.damage.log ~ summary_by_ref$reforested + summary_by_ref$block))
 
 
 # for exposition
-#Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
+Anova(lm(summary_by_exp$perc.damage.log ~ summary_by_exp$tree_exposition + summary_by_exp$block))
 
 ##### TWO WAY ANOVA By BOTH exposition and tree origin 
 
