@@ -342,9 +342,9 @@ p_d <- p_d + theme_bw() +
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
 
-fig_2<-multiplot(p_a, p_c, p_b, p_d, cols=2)
-fig_2
-ggsave("../outputs/Fig_2.png",
+Fig_2<-grid.arrange(p_a, p_c, p_b, p_d, ncol = 2)
+ggsave("../outputs/Fig_2_spanish.png", plot= Fig_2,
+       width = 16, height = 12,
        dpi = 600)
 ```
 
@@ -538,6 +538,10 @@ p3<- ggplot(summary_by_both, aes(x = factor(tree_exposition),
   theme(text = element_text(size = 20))
 
 p3
+
+ggsave("../outputs/Fig_3_spanish.png", plot= p3,
+       width = 16, height = 12,
+       dpi = 600)
 
 ```
 
@@ -745,7 +749,11 @@ p4_d
 # Multiplot Fig 4
 
 ```{r, message=FALSE, fig.height=12, fig.width=16}
-multiplot(p4_a, p4_c, p4_b, p4_d, cols=2)
+Fig_4<-grid.arrange(p4_a, p4_c, p4_b, p4_d, ncol = 2)
+ggsave("../outputs/Fig_4_spanish.png", plot= Fig_4,
+       width = 16, height = 12,
+       dpi = 600)
+
 ```
 
 # Figure 5
@@ -881,7 +889,7 @@ model_performance(glm_2_coh)
 ## Report glmer
 ```
 
-# Figure S11
+# Figure S10
 ```{r, height=6, fig.width=10, message=FALSE}
 
 
@@ -982,7 +990,10 @@ fig5c
 # Multiplot Fig 5
 ```{r, fig.height=16, fig.width=10, message=FALSE}
 
-multiplot(fig5a, fig5b, fig5c, cols=1)
+Fig_5<-grid.arrange(fig5a, fig5b, fig5c, ncol = 1)
+ggsave("../outputs/Fig_5_spanish.png", plot= Fig_5,
+       width = 16, height = 20,
+       dpi = 600)
 
 ```
 
@@ -1011,14 +1022,19 @@ p_d <- p_d + theme_bw() +
   ggtitle("")+
   coord_flip()
 p_d 
+
+ggsave("../outputs/Fig_S8_spanish.png", plot= p_d,
+       width = 16, height = 10,
+       dpi = 600)
+
 ```
 
-# Figure S12
+# Figure S11
 
 ```{r, height=20, fig.width=20, message=FALSE}
 # plot pies in map
 p_satmap <-  ggmap(sat_map) 
-p_satmap +geom_scatterpie(data=parcelas_tidy,
+p_satmap <- p_satmap +geom_scatterpie(data=parcelas_tidy,
                 aes(x=X_coordinates_longitude,
                     y=X_coordinates_latitude,
                     group=plot),
@@ -1030,9 +1046,13 @@ p_satmap +geom_scatterpie(data=parcelas_tidy,
                     labels= spanish_labels,
                     name= "Estado de salud") +
   theme(text = element_text(size = 20))
+
+ggsave("../outputs/Fig_S11_spanish.png", plot= p_satmap,
+       width = 16, height = 10,
+       dpi = 600)
 ```
 
-# Figure S13
+# Figure S12
 
 ```{r, height=6, fig.width=6, message=FALSE}
 # Create new variable with percentage of ozone damage
@@ -1075,7 +1095,8 @@ p<-p +
         axis.text=element_text(size=9))
 
 p
-ggsave("../outputs/FigS3.png",
+ggsave("../outputs/Fig_S12_spanish.png", plot= p,
+       width = 16, height = 10,
        dpi = 600)
 
 ```
