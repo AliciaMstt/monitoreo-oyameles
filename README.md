@@ -1,5 +1,7 @@
 # monitoreo-oyameles
 
+[![DOI](https://zenodo.org/badge/333581041.svg)](https://zenodo.org/badge/latestdoi/333581041)
+
 (English below)
 
 Datos y análisis del monitoreo participativo del estado de salud de árboles de oyamel en el Parque Nacional Desierto de los Leones y sus zonas de influencia en Bienes Comunales Santa Rosa Xochiac, cuyo resumen de resultados [puede verse aquí](scripts/2_resumen_monitoreo_no_code.pdf). 
@@ -96,6 +98,8 @@ De cada parcela se tomaron datos sobre la cobertura forestal y arbustiva, suelo,
 
 
 # English
+
+[![DOI](https://zenodo.org/badge/333581041.svg)](https://zenodo.org/badge/latestdoi/333581041)
 
 Data and analysis of the participatory monitoring of the health status of oyamel trees in the Desierto de los Leones National Park and its areas of influence in Bienes Comunales Santa Rosa Xochiac, whose summary of results [can be seen here](scripts/2_resumen_monitoreo_no_code.pdf).
 
