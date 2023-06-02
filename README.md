@@ -73,7 +73,7 @@ Utiliza los datos limpios (*_tidy.txt) para hacer un reporte del monitoreo parti
 
 Utiliza los datos limpios (*_tidy.txt) para hacer el subconjunto de figuras del reporte que se utilizaron para la propuesta en extenso.
 
-### [scripts/4\_figures\_Monitoring-Paper.Rmd](4\_figures\_Monitoring-Paper.Rmd):
+### [scripts/4\_figures\_Monitoring-Paper.Rmd](scripts/4_figures_Monitoring-Paper.Rmd):
 Análisis y figuras para el artículo *Evaluating pollution-related damage and restoration success in urban forests with participatory monitoring and digital tools* Conservation Biology.  https://doi.org/10.1111/cobi.14112.
 
 
